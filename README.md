@@ -4,6 +4,8 @@ Floating UI elements for the browser - dropdowns, popovers, tooltips, context me
 
 Install as `floater-ui`; the library exposes a global called `Floater`.
 
+**[Live demo](https://alphaproject1998.github.io/floater-ui/demo.html)**
+
 > **Early build.** This was extracted from a WIP feature on [dbd-randomizer.com](https://dbd-randomizer.com) to be shared and reused across other projects. The API is not stable - a lot will likely change before a 1.0 release. Use with that in mind.
 
 ## Install

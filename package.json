@@ -23,15 +23,24 @@
     ],
     "author": "Jack Briggs",
     "funding": [
-        { "type": "github", "url": "https://github.com/sponsors/Alphaproject1998" },
-        { "type": "ko_fi", "url": "https://ko-fi.com/alphaproject1998" },
-        { "type": "patreon", "url": "https://www.patreon.com/Alphaproject1998" }
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/Alphaproject1998"
+        },
+        {
+            "type": "ko_fi",
+            "url": "https://ko-fi.com/alphaproject1998"
+        },
+        {
+            "type": "patreon",
+            "url": "https://www.patreon.com/Alphaproject1998"
+        }
     ],
     "license": "MIT",
     "homepage": "https://github.com/Alphaproject1998/floater-ui#readme",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Alphaproject1998/floater-ui.git"
+        "url": "git+https://github.com/Alphaproject1998/floater-ui.git"
     },
     "bugs": {
         "url": "https://github.com/Alphaproject1998/floater-ui/issues"
