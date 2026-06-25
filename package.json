@@ -1,0 +1,39 @@
+{
+    "name": "floater-ui",
+    "version": "0.1.0",
+    "description": "Floating UI elements for the browser - dropdowns, popovers, tooltips, context menus, modals and more. No dependencies.",
+    "main": "floater.js",
+    "unpkg": "floater.js",
+    "files": [
+        "floater.js",
+        "README.md",
+        "LICENSE"
+    ],
+    "keywords": [
+        "dropdown",
+        "popover",
+        "tooltip",
+        "context-menu",
+        "modal",
+        "picker",
+        "floater",
+        "floating-ui",
+        "overlay",
+        "ui"
+    ],
+    "author": "Jack Briggs",
+    "funding": [
+        { "type": "github", "url": "https://github.com/sponsors/Alphaproject1998" },
+        { "type": "ko_fi", "url": "https://ko-fi.com/alphaproject1998" },
+        { "type": "patreon", "url": "https://www.patreon.com/Alphaproject1998" }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/Alphaproject1998/floater-ui#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Alphaproject1998/floater-ui.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Alphaproject1998/floater-ui/issues"
+    }
+}

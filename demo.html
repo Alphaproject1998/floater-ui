@@ -1,0 +1,2796 @@
+<!-- floater-ui demo - https://github.com/Alphaproject1998/floater-ui -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floater - Full Demo</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #181818;
+            color: rgba(255,255,255,0.85);
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            padding: 24px 28px 80px;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: white;
+            margin-bottom: 4px;
+        }
+        .page-sub {
+            font-size: 12px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 32px;
+        }
+
+        h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .section { margin-bottom: 44px; }
+
+        .demo-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 6px;
+            min-width: 160px;
+        }
+
+        .card-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.8);
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.1s, border-color 0.1s;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.13);
+            border-color: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .btn-blue {
+            background: rgba(70,120,220,0.2);
+            border-color: rgba(70,120,220,0.45);
+            color: rgba(160,200,255,0.9);
+        }
+        .btn-blue:hover {
+            background: rgba(70,120,220,0.35);
+        }
+
+        .btn-red {
+            background: rgba(200,55,55,0.18);
+            border-color: rgba(200,55,55,0.4);
+            color: rgba(255,140,140,0.9);
+        }
+        .btn-red:hover {
+            background: rgba(200,55,55,0.32);
+        }
+
+        .arrow {
+            font-size: 10px;
+            opacity: 0.5;
+        }
+
+        .out {
+            font-size: 11px;
+            font-family: monospace;
+            color: rgba(255,255,255,0.4);
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 3px;
+            padding: 4px 8px;
+            min-height: 26px;
+        }
+        .out span {
+            color: rgba(120,210,140,0.9);
+        }
+        .out.multi {
+            white-space: pre-wrap;
+        }
+
+        .test-input {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 4px;
+            padding: 4px 9px;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.1s;
+        }
+        .test-input:focus {
+            border-color: rgba(255,255,255,0.45);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin: 44px 0;
+        }
+
+        /* Event log */
+        .log-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .log-bar label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+        }
+
+        #EventLog {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            height: 240px;
+            overflow-y: auto;
+            padding: 6px 10px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .le {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.5);
+        }
+        .le .lt {
+            color: rgba(255,255,255,0.2);
+        }
+        .le .li {
+            color: rgba(100,170,255,0.9);
+        }
+        .le .lv {
+            color: rgba(255,200,90,0.9);
+        }
+        .le .ld {
+            color: rgba(160,255,160,0.65);
+        }
+
+        /* Viewport edge buttons */
+        .edge-btn {
+            position: fixed;
+            font-size: 11px;
+            padding: 4px 9px;
+            z-index: 500;
+        }
+        .e-tl {
+            top: 6px;
+            left: 6px;
+        }
+        .e-tc {
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .e-tr {
+            top: 6px;
+            right: 6px;
+        }
+        .e-bl {
+            bottom: 6px;
+            left: 6px;
+        }
+        .e-bc {
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .e-br {
+            bottom: 6px;
+            right: 6px;
+        }
+
+        /* Color swatch */
+        .swatch {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.25);
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ctx-val-display" style="position:fixed;bottom:32px;right:96px;z-index:600;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 8px;pointer-events:none;display:none;">ctx: —</div>
+
+<h1>Floater - Full Demo</h1>
+<p class="page-sub">17 built-in types (dropdown, number-picker, text-suggestions, popover, chips, slider, input-group, date, time, datetime, fetch, audio, video, image, persist, modal, context-menu) - create() and attach() modes - markers - events - dynamic update/destroy - custom types - viewport edge cases - hover/programmatic triggers - scroll behaviour - fitContent - blockScroll / blockClicks - press trigger - scrollSelect</p>
+<p class="page-sub" style="margin-top:4px;color:rgba(255,255,255,0.2);">Arrow ▶ only rotates when <code style="font-size:11px;color:rgba(200,200,255,0.5);">arrowEl</code> is wired - demos that have it wired are marked with ↕</p>
+
+<!-- ═══ 1. Dropdown ══════════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>1. Dropdown</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Basic ↕ (arrow wired)</div>
+            <button class="btn" id="dd-basic-btn">Fruit <span class="arrow" id="dd-basic-arrow">▶</span></button>
+            <div class="out" id="dd-basic-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Markers (current + preferred) ↕ - select to move current</div>
+            <button class="btn" id="dd-mark-btn">Theme <span class="arrow" id="dd-mark-arrow">▶</span></button>
+            <div class="out" id="dd-mark-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Combined marker (current = preferred on same item)</div>
+            <button class="btn" id="dd-combo-btn">Format <span class="arrow" id="dd-combo-arrow">▶</span></button>
+            <div class="out" id="dd-combo-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Pre-selected item (3rd in list)</div>
+            <button class="btn" id="dd-presel-btn">Status <span class="arrow" id="dd-presel-arrow">▶</span></button>
+            <div class="out" id="dd-presel-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">20 items + minWidth:200</div>
+            <button class="btn" id="dd-long-btn">Language <span class="arrow" id="dd-long-arrow">▶</span></button>
+            <div class="out" id="dd-long-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Dynamic item update</div>
+            <button class="btn" id="dd-upd-btn">Category <span class="arrow" id="dd-upd-arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="dd-upd-a">Set A</button>
+                <button class="btn btn-blue" id="dd-upd-b">Set B</button>
+            </div>
+            <div class="out" id="dd-upd-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">centerX: true - narrow btn, wide content</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button class="btn" id="dd-cx-btn" style="padding:5px 8px;font-size:12px;">▼</button>
+                <small style="color:rgba(255,255,255,0.3);font-size:11px;">← narrow anchor</small>
+            </div>
+            <div class="out" id="dd-cx-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Hover to open (mouseenter/leave)</div>
+            <button class="btn" id="dd-hover-btn" style="background:rgba(100,80,200,0.15);border-color:rgba(100,80,200,0.4);">Hover me <span class="arrow" id="dd-hover-arrow">▶</span></button>
+            <div class="out" id="dd-hover-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 2. Number Picker ════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>2. Number Picker</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Delay presets - field + markers</div>
+            <div class="btn-row" style="align-items:center;">
+                <button class="btn" id="np-dec">−</button>
+                <input class="test-input" id="np-delay-field" type="text" value="500" style="width:60px;text-align:center;">
+                <button class="btn" id="np-inc">+</button>
+            </div>
+            <div class="out" id="np-delay-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Volume 0-100</div>
+            <button class="btn" id="np-vol-btn">Volume <span class="arrow">▶</span></button>
+            <div class="out" id="np-vol-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Custom currentTitle / preferenceTitle</div>
+            <button class="btn" id="np-title-btn">Timeout <span class="arrow">▶</span></button>
+            <div class="out" id="np-title-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">centerX: true</div>
+            <button class="btn" id="np-cx-btn">Size <span class="arrow">▶</span></button>
+            <div class="out" id="np-cx-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 3. Text Suggestions ════════════════════════════════════════════ -->
+<div class="section">
+    <h2>3. Text Suggestions</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">String array - filtered on input</div>
+            <input class="test-input" id="ts-str-inp" placeholder="Type a language…" style="width:200px;">
+            <div class="out" id="ts-str-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">value/label objects</div>
+            <input class="test-input" id="ts-obj-inp" placeholder="Search role…" style="width:200px;">
+            <div class="out" id="ts-obj-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Open on button (not focus)</div>
+            <button class="btn" id="ts-btn-btn">Suggest <span class="arrow">▶</span></button>
+            <div class="out" id="ts-btn-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">fitContent: true - width = content, not anchor</div>
+            <button class="btn" id="ts-fc-btn" style="width:100%;">Wide anchor button ↕</button>
+            <div class="out" id="ts-fc-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 4. Popover ══════════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>4. Popover</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Rich HTML content</div>
+            <button class="btn" id="pop-rich-btn">ⓘ Info</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Long / scrollable + closeButton: true</div>
+            <button class="btn" id="pop-long-btn">ⓘ Help</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Live content update</div>
+            <button class="btn" id="pop-upd-btn">ⓘ Status</button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="pop-upd-ok">Set OK</button>
+                <button class="btn btn-red" id="pop-upd-err">Set Error</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">centerX: true</div>
+            <button class="btn" id="pop-cx-btn">ⓘ Centered</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">gap: 0 / 16 / 32</div>
+            <div class="btn-row">
+                <button class="btn" id="pop-g0-btn">gap 0</button>
+                <button class="btn" id="pop-g16-btn">gap 16</button>
+                <button class="btn" id="pop-g32-btn">gap 32</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 5. Chips ════════════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>5. Chips</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Unlimited multi-select</div>
+            <button class="btn" id="chips-multi-btn">Tags <span class="arrow">▶</span></button>
+            <div class="out" id="chips-multi-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">maxSelect: 2 (no auto-close)</div>
+            <button class="btn" id="chips-max-btn">Pick 2 colours <span class="arrow">▶</span></button>
+            <div class="out" id="chips-max-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">preferenceValues (dotted border) + closeOnMax: true</div>
+            <button class="btn" id="chips-pref-btn">Pick 2 colours <span class="arrow">▶</span></button>
+            <div class="out" id="chips-pref-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Pre-selected + update()</div>
+            <button class="btn" id="chips-upd-btn">Filters <span class="arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="chips-all-btn">All</button>
+                <button class="btn btn-red" id="chips-none-btn">None</button>
+            </div>
+            <div class="out" id="chips-upd-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 6. Slider ═══════════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>6. Slider</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Single - opacity</div>
+            <button class="btn" id="sl-one-btn">Opacity <span class="arrow">▶</span></button>
+            <div class="out" id="sl-one-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Multi-slider - RGB</div>
+            <button class="btn" id="sl-rgb-btn">RGB <span class="arrow">▶</span></button>
+            <div class="out multi" id="sl-rgb-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Discrete steps 1-5</div>
+            <button class="btn" id="sl-step-btn">Quality <span class="arrow">▶</span></button>
+            <div class="out" id="sl-step-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">update() slider value</div>
+            <button class="btn" id="sl-upd-btn">Volume <span class="arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="sl-upd-0">0</button>
+                <button class="btn btn-blue" id="sl-upd-50">50</button>
+                <button class="btn btn-blue" id="sl-upd-100">100</button>
+            </div>
+            <div class="out" id="sl-upd-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 7. Input Group ══════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>7. Input Group</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">text + number + checkbox</div>
+            <button class="btn" id="ig-basic-btn">Edit Profile <span class="arrow">▶</span></button>
+            <div class="out multi" id="ig-basic-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">select + textarea + text</div>
+            <button class="btn" id="ig-native-btn">Form Fields <span class="arrow">▶</span></button>
+            <div class="out multi" id="ig-native-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Nested FS sub-types (dropdown with currentValue/preferenceValue + chips)</div>
+            <button class="btn" id="ig-nested-btn">Settings <span class="arrow">▶</span></button>
+            <div class="out multi" id="ig-nested-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">update() field values</div>
+            <button class="btn" id="ig-upd-btn">Fields <span class="arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="ig-upd-fill">Fill</button>
+                <button class="btn btn-red" id="ig-upd-clear">Clear</button>
+            </div>
+            <div class="out multi" id="ig-upd-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 8. Date / Time / Datetime ═══════════════════════════════════════ -->
+<div class="section">
+    <h2>8. Date / Time / Datetime</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">date</div>
+            <button class="btn" id="dt-date-btn">Pick date <span class="arrow">▶</span></button>
+            <div class="out" id="dt-date-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">time</div>
+            <button class="btn" id="dt-time-btn">Pick time <span class="arrow">▶</span></button>
+            <div class="out" id="dt-time-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">datetime-local</div>
+            <button class="btn" id="dt-dt-btn">Pick datetime <span class="arrow">▶</span></button>
+            <div class="out" id="dt-dt-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">date with min/max (±30 days)</div>
+            <button class="btn" id="dt-constrained-btn">Constrained <span class="arrow">▶</span></button>
+            <div class="out" id="dt-constrained-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">time step: 900 (15 min)</div>
+            <button class="btn" id="dt-step-btn">15-min steps <span class="arrow">▶</span></button>
+            <div class="out" id="dt-step-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">update() prefill value</div>
+            <button class="btn" id="dt-upd-btn">Date <span class="arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="dt-upd-today">Today</button>
+                <button class="btn btn-blue" id="dt-upd-next">+7 days</button>
+            </div>
+            <div class="out" id="dt-upd-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">showArrows: false - value still editable, picker visible</div>
+            <button class="btn" id="dt-noarrow-btn">Date (no arrows) <span class="arrow">▶</span></button>
+            <div class="out" id="dt-noarrow-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">allowTyping: false - arrows + picker, no keyboard entry</div>
+            <button class="btn" id="dt-noinput-btn">Time (arrows only) <span class="arrow">▶</span></button>
+            <div class="out" id="dt-noinput-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">showPicker: false - arrows + typing, no calendar icon</div>
+            <button class="btn" id="dt-nopicker-btn">Datetime (no picker icon) <span class="arrow">▶</span></button>
+            <div class="out" id="dt-nopicker-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">showArrows: false + showPicker: false + allowTyping: false - display only</div>
+            <button class="btn" id="dt-readonly-btn">Date (read-only display) <span class="arrow">▶</span></button>
+            <div class="out" id="dt-readonly-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 9. attach() mode ════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>9. attach() - existing DOM elements</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Existing .fs-dropdown div — type: 'dropdown' passed so type init runs automatically</div>
+            <button class="btn" id="att-dd-btn">Category <span class="arrow" id="att-dd-arrow">▶</span></button>
+            <div class="fs-dropdown" id="att-dd-el" hidden style="min-width:140px;">
+                <div class="fs-dropdown-option" data-value="animals">Animals</div>
+                <div class="fs-dropdown-option" data-value="plants">Plants</div>
+                <div class="fs-dropdown-option fs-opt-current" data-value="fungi">Fungi</div>
+                <div class="fs-dropdown-option" data-value="minerals">Minerals</div>
+            </div>
+            <div class="out" id="att-dd-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Existing .fs-number-picker div — type: 'number-picker' auto-initialises</div>
+            <div class="btn-row" style="align-items:center;">
+                <input class="test-input" id="att-np-field" type="text" value="1000" style="width:70px;text-align:center;">
+            </div>
+            <div class="fs-number-picker" id="att-np-el" hidden>
+                <button class="fs-number-picker-preset" type="button" data-value="250">250</button>
+                <button class="fs-number-picker-preset" type="button" data-value="500">500</button>
+                <button class="fs-number-picker-preset" type="button" data-value="1000">1000</button>
+                <button class="fs-number-picker-preset" type="button" data-value="2000">2000</button>
+            </div>
+            <div class="out" id="att-np-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Arbitrary custom markup</div>
+            <button class="btn" id="att-custom-btn">Open snippet <span class="arrow">▶</span></button>
+            <div id="att-custom-el" class="fs-floater" hidden style="padding:14px;min-width:210px;">
+                <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px;">Custom attached element</p>
+                <p style="font-size:13px;">Any markup goes here - attach() wraps it with Floater positioning and scroll-close behaviour.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 10. Advanced - closeOthers / gap / minWidth ═════════════════════ -->
+<div class="section">
+    <h2>10. Advanced options</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">closeOthers: false - all can be open</div>
+            <div class="btn-row">
+                <button class="btn" id="co-a-btn">Floater A</button>
+                <button class="btn" id="co-b-btn">Floater B</button>
+                <button class="btn" id="co-c-btn">Floater C</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">gap: 0 / 12 / 28</div>
+            <div class="btn-row">
+                <button class="btn" id="gap-0-btn">gap 0</button>
+                <button class="btn" id="gap-12-btn">gap 12</button>
+                <button class="btn" id="gap-28-btn">gap 28</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">minWidth: 320</div>
+            <button class="btn" id="mw-btn">Wide dropdown <span class="arrow">▶</span></button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">onChange: false (silent)</div>
+            <button class="btn" id="silent-btn">Silent dropdown <span class="arrow">▶</span></button>
+            <div class="out" id="silent-out">events suppressed</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">bind() multi-anchor - same floater, multiple triggers</div>
+            <div class="btn-row">
+                <button class="btn ma-btn">Trigger A</button>
+                <button class="btn ma-btn">Trigger B</button>
+                <button class="btn ma-btn">Trigger C</button>
+            </div>
+            <div class="out" id="ma-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">trigger: 'contextmenu' - right-click zone</div>
+            <div id="ctx-zone" data-fs-no-context-menu style="padding:18px 20px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:4px;font-size:12px;color:rgba(255,255,255,0.4);cursor:context-menu;text-align:center;">Right-click here</div>
+            <div class="out" id="ctx-zone-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">trigger: 'focus' - input focus opens floater</div>
+            <input class="test-input" id="focus-trig-inp" type="text" placeholder="Focus me…" style="width:160px;">
+            <div class="out" id="focus-trig-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 11. Custom types via registerType() ══════════════════════════════ -->
+<div class="section">
+    <h2>11. Custom types - registerType()</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Color palette picker</div>
+            <div class="btn-row" style="align-items:center;">
+                <button class="btn" id="col-btn">Pick colour</button>
+                <span class="swatch" id="col-swatch" style="background:#5588ff;"></span>
+                <span id="col-val" style="font-size:11px;color:rgba(255,255,255,0.4);">#5588ff</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Star rating</div>
+            <button class="btn" id="star-btn">Rate ★</button>
+            <div class="out" id="star-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Icon / emoji picker</div>
+            <button class="btn" id="emoji-btn">Pick icon</button>
+            <div class="out" id="emoji-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Confirm dialog (yes/no)</div>
+            <button class="btn btn-red" id="confirm-btn">Delete item</button>
+            <div class="out" id="confirm-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">context-menu built-in - <code style="font-size:11px;">global: true</code></div>
+            <p style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:6px;">Right-click anywhere (except inputs/selects) to open, including over other floaters.<br/>global:true wires contextmenu automatically.<br/>Does not close when other floaters open, does not close others when it opens.<br/>Last selection shown bottom-right.</p>
+            <button class="btn" id="ctx-btn">Open at cursor</button>
+            <div class="out" id="ctx-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Progress / status indicator</div>
+            <button class="btn" id="prog-btn">Start task</button>
+            <div class="out" id="prog-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 12. Dynamic operations ══════════════════════════════════════════ -->
+<div class="section">
+    <h2>12. Dynamic operations</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">destroy() + recreate</div>
+            <button class="btn" id="dyn-target-btn">Open <span class="arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="dyn-create">Create</button>
+                <button class="btn btn-red" id="dyn-destroy">Destroy</button>
+            </div>
+            <div class="out" id="dyn-status">exists: yes</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">closeAll() / closeAll(filter)</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">open some first:</div>
+            <div class="btn-row">
+                <button class="btn" id="ca-open-x">Open X</button>
+                <button class="btn" id="ca-open-y">Open Y</button>
+                <button class="btn" id="ca-open-z">Open Z</button>
+            </div>
+            <div class="btn-row" style="margin-top:4px;">
+                <button class="btn btn-red" id="api-close-all">Close all</button>
+                <button class="btn btn-red" id="api-close-dd">Close dropdowns</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">update() - live marker change</div>
+            <button class="btn" id="mark-btn">Options <span class="arrow">▶</span></button>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="mark-cur-a">Current → A</button>
+                <button class="btn btn-blue" id="mark-cur-b">Current → B</button>
+                <button class="btn btn-blue" id="mark-pref-c">Pref → C</button>
+            </div>
+            <div class="out" id="mark-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">has() / get() API - reads mark-upd state</div>
+            <div class="btn-row">
+                <button class="btn" id="api-has">has('mark-upd')</button>
+                <button class="btn" id="api-get">get state</button>
+            </div>
+            <div class="out multi" id="api-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 12b. Programmatic / remote triggers ═════════════════════════════ -->
+<div class="section">
+    <h2>12b. Programmatic / remote triggers - no direct interaction needed</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Open after 1.5s delay (timer)</div>
+            <button class="btn btn-blue" id="trig-timer-btn">Start timer</button>
+            <div class="out" id="trig-timer-out">—</div>
+            <div id="trig-timer-anchor" style="margin-top:4px;padding:5px 10px;border:1px dashed rgba(255,255,255,0.18);border-radius:4px;font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">floater anchors here</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Remote: click button A → opens anchored to button B</div>
+            <div style="display:flex;gap:10px;align-items:center;">
+                <button class="btn btn-blue" id="trig-remote-trigger">Trigger</button>
+                <span style="color:rgba(255,255,255,0.3);font-size:12px;">→</span>
+                <button class="btn" id="trig-remote-anchor" style="pointer-events:none;opacity:0.7;">Anchor</button>
+            </div>
+            <div class="out" id="trig-remote-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Chain: picking A fires B on a different anchor</div>
+            <button class="btn" id="trig-chain-a-btn">Step 1 <span class="arrow" id="trig-chain-a-arrow">▶</span></button>
+            <div id="trig-chain-b-anchor" style="margin-top:4px;padding:5px 10px;border:1px dashed rgba(255,255,255,0.18);border-radius:4px;font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">Step 2 opens here</div>
+            <div class="out" id="trig-chain-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Open from input focus (text-suggestions on a label click)</div>
+            <label style="font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;" for="trig-label-inp">Click label →</label>
+            <input class="test-input" id="trig-label-inp" placeholder="or focus input" style="width:160px;">
+            <div class="out" id="trig-label-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Programmatic open/close via API buttons - persist only</div>
+            <div id="trig-prog-anchor" style="padding:8px 12px;border:1px dashed rgba(255,255,255,0.18);border-radius:4px;font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">floater anchor</div>
+            <div class="btn-row" style="margin-bottom:6px;">
+                <button class="btn btn-blue" id="trig-prog-open">open()</button>
+                <button class="btn btn-red" id="trig-prog-close">close()</button>
+                <button class="btn" id="trig-prog-toggle">toggle()</button>
+            </div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:5px;">Console: <code style="font-size:10px;color:rgba(200,200,255,0.4);">_trigProg.open()</code></div>
+        </div>
+
+    </div>
+</div>
+
+<hr>
+
+<!-- ═══ 13. Viewport edges ══════════════════════════════════════════════ -->
+<div class="section">
+    <h2>13. Viewport edge positions - floater flips above/below as needed</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.35);">Six fixed buttons are pinned to the viewport edges.</p>
+</div>
+
+<button class="btn edge-btn e-tl" id="edge-tl">↖ TL</button>
+<button class="btn edge-btn e-tc" id="edge-tc">▼ TC</button>
+<button class="btn edge-btn e-tr" id="edge-tr">TR ↗</button>
+<button class="btn edge-btn e-bl" id="edge-bl">↙ BL</button>
+<button class="btn edge-btn e-bc" id="edge-bc">▲ BC</button>
+<button class="btn edge-btn e-br" id="edge-br">BR ↘</button>
+
+<!-- ═══ 14. preferRight / preferLeft / centerY ══════════════════════════ -->
+<div class="section">
+    <h2>14. preferRight / preferLeft / centerY</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">preferRight - opens right, flips left if needed</div>
+            <button class="btn" id="side-right-btn">Options <span class="arrow" id="side-right-arrow">▶</span></button>
+            <div class="out" id="side-right-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">preferLeft - opens left, flips right if needed</div>
+            <button class="btn" id="side-left-btn">Options <span class="arrow" id="side-left-arrow">▶</span></button>
+            <div class="out" id="side-left-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">preferRight + centerY - vertically centred on anchor</div>
+            <button class="btn" id="side-cy-btn">Options <span class="arrow" id="side-cy-arrow">▶</span></button>
+            <div class="out" id="side-cy-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 15. Persist type / persistOnOutsideClick ════════════════════════ -->
+<div class="section">
+    <h2>15. persist type / persistOnOutsideClick - stays open until explicitly closed</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">persistOnOutsideClick: true - click outside does nothing</div>
+            <button class="btn" id="persist-btn">Open (stays open)</button>
+            <button class="btn btn-red" id="persist-close-btn" style="margin-top:4px;">Close it</button>
+            <div class="out" id="persist-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Floater within floater - child keeps parent open</div>
+            <button class="btn" id="nested-parent-btn">Open parent <span class="arrow" id="nested-parent-arrow">▶</span></button>
+            <div class="out" id="nested-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Floater within floater - child selection closes both</div>
+            <button class="btn" id="nested2-parent-btn">Open parent <span class="arrow" id="nested2-parent-arrow">▶</span></button>
+            <div class="out" id="nested2-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 16. Modal - blocks UI until interacted with ═════════════════════ -->
+<div class="section">
+    <h2>16. Modal - backdrop blocks page, must be explicitly dismissed</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">modal: true + protected: true - backdrop click does nothing (protected)</div>
+            <button class="btn btn-red" id="modal-btn" style="min-width:120px;">Open modal</button>
+            <div class="out" id="modal-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">blockScroll: true - locks page scroll; backdrop click closes</div>
+            <button class="btn" id="modal-scroll-btn">Open (blocks scroll)</button>
+            <div class="out" id="modal-scroll-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">blockClicks: true - backdrop absorbs clicks, won't close on click</div>
+            <button class="btn" id="modal-backdrop-btn">Open (clicks blocked)</button>
+            <div class="out" id="modal-backdrop-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 17. Fetch / Audio / Video ═══════════════════════════════════════ -->
+<div class="section">
+    <h2>17. Fetch / Audio / Video types</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">fetch - JSON with transform + closeButton: true</div>
+            <button class="btn btn-blue" id="fetch-btn">Fetch JSON</button>
+            <div class="out" id="fetch-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">fetch - image URL (auto-detected from extension)</div>
+            <button class="btn btn-blue" id="fetch-img-btn">Fetch image</button>
+            <div class="out" id="fetch-img-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">fetch - XHR mode (fetchMethod: 'xhr')</div>
+            <button class="btn btn-blue" id="fetch-xhr-btn">Fetch via XHR</button>
+            <div class="out" id="fetch-xhr-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">audio - track swap</div>
+            <button class="btn" id="audio-btn">Open player</button>
+            <div class="btn-row" style="margin-top:4px;">
+                <button class="btn btn-blue" id="audio-src-a">Track A</button>
+                <button class="btn btn-blue" id="audio-src-b">Track B</button>
+            </div>
+            <div class="out" id="audio-track-out">No Track Selected</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">audio - rememberProgress (close + reopen restores position)</div>
+            <button class="btn" id="audio-mem-btn">Open (remembers pos)</button>
+            <div class="out" id="audio-mem-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">video - resetOnOpen (always restarts)</div>
+            <button class="btn" id="video-btn">Open player</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">video - rememberProgress (close + reopen continues)</div>
+            <button class="btn" id="video-mem-btn">Open (remembers pos)</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 18. setDefaults() ════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>18. setDefaults() - global and type-level defaults</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">global gap: 10 applied to all instances created after setDefaults()</div>
+            <button class="btn" id="sd-gap-btn">Open (gap 10) <span class="arrow">▶</span></button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">type default — setDefaults('dropdown', { minWidth: 200 })</div>
+            <button class="btn" id="sd-minw-btn">Open (minWidth 200) <span class="arrow">▶</span></button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">instance opt overrides type default — minWidth: 80</div>
+            <button class="btn" id="sd-override-btn">Open (override 80) <span class="arrow">▶</span></button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 19. Image floater ═══════════════════════════════════════════════ -->
+<div class="section">
+    <h2>19. Image floater</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Basic image + caption</div>
+            <button class="btn" id="img-basic-btn">Show image</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">update() - swap src + caption</div>
+            <button class="btn" id="img-upd-btn">Open viewer</button>
+            <div class="btn-row" style="margin-top:4px;">
+                <button class="btn btn-blue" id="img-upd-a">Image A</button>
+                <button class="btn btn-blue" id="img-upd-b">Image B</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">closeButton: true</div>
+            <button class="btn" id="img-close-btn">Show with X button</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 20. toFrontOn - z-index stacking ════════════════════════════════ -->
+<div class="section">
+    <h2>20. toFrontOn - z-index stacking</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">All three open on the same anchor with <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOthers: false</code> so they overlap. Each has a different size. Click/hover inside each to test bring-to-front behaviour.</p>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">3 close anchors, 1 callsite - floaters overlap for z-stack test</div>
+            <div style="display:flex;gap:3px;margin-bottom:6px;">
+                <div id="tfr-anchor-a" style="flex:1;padding:5px 2px;border:1px dashed rgba(70,120,220,0.4);border-radius:4px;font-size:10px;color:rgba(70,120,220,0.7);text-align:center;">click</div>
+                <div id="tfr-anchor-b" style="flex:1;padding:5px 2px;border:1px dashed rgba(70,180,120,0.4);border-radius:4px;font-size:10px;color:rgba(70,180,120,0.7);text-align:center;">hover</div>
+                <div id="tfr-anchor-c" style="flex:1;padding:5px 2px;border:1px dashed rgba(180,100,70,0.4);border-radius:4px;font-size:10px;color:rgba(180,100,70,0.7);text-align:center;">none</div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="tfr-open-all">Open all 3</button>
+                <button class="btn btn-red" id="tfr-close-all">Close all</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 21. Scroll behaviour ════════════════════════════════════════════ -->
+<div class="section">
+    <h2>21. Scroll behaviour</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;">Default (<code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOnScroll: false</code>): stays open and <strong>repositions to follow the anchor</strong> as the page scrolls. Use <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOnScroll: true</code> to close on scroll. <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">persistOnOutsideClick: true</code> → scroll-immune but <em>static</em> (fixed position, does not follow anchor).</p>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">closeOnScroll: true - closes on scroll</div>
+            <button class="btn" id="scroll-close-btn">Open popover</button>
+            <div class="out" id="scroll-close-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">closeOnScroll: false (default) - follows anchor</div>
+            <button class="btn" id="scroll-keep-btn">Open popover</button>
+            <div class="out" id="scroll-keep-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">persistOnOutsideClick: true - also scroll-immune</div>
+            <button class="btn" id="scroll-persist-btn">Open popover</button>
+            <div class="out" id="scroll-persist-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">modal: true - scroll-immune + backdrop (click backdrop to close)</div>
+            <button class="btn" id="scroll-modal-btn">Open modal</button>
+            <button class="btn btn-red" id="scroll-modal-close">Close</button>
+            <div class="out" id="scroll-modal-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 22. Press trigger + scroll select ═══════════════════════════════ -->
+<div class="section">
+    <h2>22. Press trigger &amp; scroll select</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;"><code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">trigger: 'press'</code> opens on mousedown and selects by drag. <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">scrollSelect: true</code> lets you scroll through options without opening the floater.</p>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">trigger: 'press' - hold and drag to select</div>
+            <button class="btn" id="press-btn">Hold &amp; drag</button>
+            <div class="out" id="press-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">scrollSelect: true - scroll wheel on button (no open)</div>
+            <button class="btn" id="scroll-sel-btn">Scroll here</button>
+            <div class="out" id="scroll-sel-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">number-picker scrollSelect preset mode - scroll cycles 5/10/25/50/100</div>
+            <input type="number" class="test-input" id="scroll-num-inp" value="10" style="width:100px;">
+            <div class="out" id="scroll-num-out">10</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">number-picker scrollSelect step mode - scroll ±5; click to open</div>
+            <input type="number" class="test-input" id="scroll-num-step-inp" value="50" style="width:100px;">
+            <div class="out" id="scroll-num-step-out">50</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">date scrollSelect - scroll input to change day; open picker and scroll cols to change per-col</div>
+            <input type="text" class="test-input" id="scroll-date-inp" placeholder="YYYY-MM-DD" style="width:130px;">
+            <div class="out" id="scroll-date-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">time scrollSelect - scroll input to change minute; open picker and scroll cols to change per-col</div>
+            <input type="text" class="test-input" id="scroll-time-inp" placeholder="HH:MM" style="width:100px;">
+            <div class="out" id="scroll-time-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">datetime scrollSelect - scroll input to change minute; open picker and scroll cols to change per-col</div>
+            <input type="text" class="test-input" id="scroll-dt-inp" placeholder="YYYY-MM-DDTHH:MM" style="width:175px;">
+            <div class="out" id="scroll-dt-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">date scrollPanel: true - open picker and scroll anywhere on it to change day; cols also scroll per-col</div>
+            <input type="text" class="test-input" id="scroll-date-panel-inp" placeholder="YYYY-MM-DD" style="width:130px;">
+            <div class="out" id="scroll-date-panel-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">time scrollCols: false - open picker; cols do not respond to scroll; input still scrolls minute</div>
+            <input type="text" class="test-input" id="scroll-time-nocols-inp" placeholder="HH:MM" style="width:100px;">
+            <div class="out" id="scroll-time-nocols-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">datetime scrollPanel: true + scrollCols: true - scroll input, panel, or individual cols</div>
+            <input type="text" class="test-input" id="scroll-dt-full-inp" placeholder="YYYY-MM-DDTHH:MM" style="width:175px;">
+            <div class="out" id="scroll-dt-full-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<hr>
+
+<!-- ═══ 23. Events log ══════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>23. Events - all instances</h2>
+    <div class="log-bar">
+        <button class="btn" id="log-clear">Clear</button>
+        <label><input type="checkbox" id="log-verbose" checked> Verbose data</label>
+    </div>
+    <div id="EventLog"></div>
+</div>
+
+<script src="floater.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    // ── Event log ──────────────────────────────────────────────────────────
+
+    const logEl = document.getElementById('EventLog');
+    const logVerbose = document.getElementById('log-verbose');
+
+    function logEvent(id, event, data) {
+        const time = new Date().toTimeString().slice(0, 8);
+        const raw = logVerbose.checked && data && Object.keys(data).length
+            ? JSON.stringify(data, (k, v) => v instanceof Element ? `<${v.tagName.toLowerCase()}>` : v)
+            : '';
+        // Escape so JSON containing e.g. <button> doesn't get parsed as HTML
+        const dataStr = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const div = document.createElement('div');
+        div.className = 'le';
+        div.innerHTML = `<span class="lt">${time}</span> <span class="li">${id}</span> <span class="lv">${event}</span>${dataStr ? ' <span class="ld">' + dataStr + '</span>' : ''}`;
+        logEl.insertBefore(div, logEl.firstChild);
+        if (logEl.children.length > 150) logEl.removeChild(logEl.lastChild);
+    }
+
+    const LOG_EVENTS = new Set(['show', 'hide', 'change', 'input', 'update', 'destroy']);
+    Floater.logger((level, msg, data) => {
+        const sep = msg.indexOf(':');
+        const id = msg.slice(0, sep);
+        const event = msg.slice(sep + 1);
+        if (LOG_EVENTS.has(event)) logEvent(id, event, data.data);
+    }, 'event');
+
+    document.getElementById('log-clear').onclick = () => { logEl.innerHTML = ''; };
+
+    // ── 1. Dropdown ────────────────────────────────────────────────────────
+
+    const ddBasic = Floater.create('dd-basic', 'dropdown', {
+        items: [
+            { value: 'apple', label: 'Apple' },
+            { value: 'banana', label: 'Banana' },
+            { value: 'cherry', label: 'Cherry' },
+            { value: 'date', label: 'Date' },
+            { value: 'elderberry', label: 'Elderberry' },
+        ],
+    });
+    ddBasic.on('change', ({ label, value }) => {
+        document.getElementById('dd-basic-out').innerHTML = `<span>${label}</span> (${value})`;
+    });
+    Floater.bind(document.getElementById('dd-basic-btn'), ddBasic, { trigger: 'click', arrowEl: document.getElementById('dd-basic-arrow') });
+
+    const ddMark = Floater.create('dd-mark', 'dropdown', {
+        items: [
+            { value: 'system', label: 'System default' },
+            { value: 'dark', label: 'Dark' },
+            { value: 'light', label: 'Light' },
+            { value: 'midnight', label: 'Midnight' },
+            { value: 'solarized', label: 'Solarized' },
+        ],
+        currentValue: 'dark',
+        preferenceValue: 'system',
+        currentTitle: 'Active theme',
+    });
+    ddMark.on('change', ({ label, value }) => {
+        document.getElementById('dd-mark-out').innerHTML = `<span>${label}</span>`;
+        ddMark.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('dd-mark-btn'), ddMark, { trigger: 'click', arrowEl: document.getElementById('dd-mark-arrow') });
+
+    // Combined marker - current and preferred on same item
+    const ddCombo = Floater.create('dd-combo', 'dropdown', {
+        items: [
+            { value: 'json', label: 'JSON' },
+            { value: 'yaml', label: 'YAML' },
+            { value: 'toml', label: 'TOML' },
+            { value: 'xml', label: 'XML' },
+        ],
+        currentValue: 'json',
+        preferenceValue: 'json',
+        currentTitle: 'Current format',
+        preferenceTitle: 'Recommended',
+    });
+    ddCombo.on('change', ({ label }) => {
+        document.getElementById('dd-combo-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('dd-combo-btn'), ddCombo, { trigger: 'click', arrowEl: document.getElementById('dd-combo-arrow') });
+
+    const ddPresel = Floater.create('dd-presel', 'dropdown', {
+        items: [
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' },
+            { value: 'pending', label: 'Pending', selected: true },
+            { value: 'banned', label: 'Banned' },
+        ],
+    });
+    ddPresel.on('change', ({ label }) => {
+        document.getElementById('dd-presel-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('dd-presel-btn'), ddPresel, { trigger: 'click', arrowEl: document.getElementById('dd-presel-arrow') });
+
+    const ddLong = Floater.create('dd-long', 'dropdown', {
+        items: ['English','French','Spanish','German','Italian','Portuguese','Dutch',
+                'Russian','Chinese','Japanese','Korean','Arabic','Hindi','Swedish',
+                'Polish','Turkish','Czech','Finnish','Norwegian','Danish'].map(l => ({ value: l.toLowerCase(), label: l })),
+        minWidth: 200,
+    });
+    ddLong.on('change', ({ label }) => {
+        document.getElementById('dd-long-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('dd-long-btn'), ddLong, { trigger: 'click', arrowEl: document.getElementById('dd-long-arrow') });
+
+    const ddUpd = Floater.create('dd-upd', 'dropdown', {
+        items: [{ value: 'a1', label: 'Alpha' }, { value: 'a2', label: 'Beta' }, { value: 'a3', label: 'Gamma' }],
+    });
+    ddUpd.on('change', ({ label }) => {
+        document.getElementById('dd-upd-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('dd-upd-btn'), ddUpd, { trigger: 'click', arrowEl: document.getElementById('dd-upd-arrow') });
+    document.getElementById('dd-upd-a').onclick = () => ddUpd.update({
+        items: [{ value: 'a1', label: 'Alpha' }, { value: 'a2', label: 'Beta' }, { value: 'a3', label: 'Gamma' }],
+    });
+    document.getElementById('dd-upd-b').onclick = () => ddUpd.update({
+        items: [{ value: 'r', label: 'Red' }, { value: 'g', label: 'Green' }, { value: 'b', label: 'Blue' }, { value: 'y', label: 'Yellow' }, { value: 'p', label: 'Purple' }],
+    });
+
+    const ddCx = Floater.create('dd-cx', 'dropdown', {
+        items: [
+            { value: 'a', label: 'A wide option - should center over the narrow ▼ button' },
+            { value: 'b', label: 'Another wide option demonstrating centerX alignment' },
+            { value: 'c', label: 'Third option - all items force dropdown wider than anchor' },
+        ],
+        minWidth: 320,
+    });
+    ddCx.on('change', ({ label }) => {
+        document.getElementById('dd-cx-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('dd-cx-btn'), ddCx, { trigger: 'click', centerX: true });
+
+    const ddHover = Floater.create('dd-hover', 'dropdown', {
+        items: [
+            { value: 'h1', label: 'Hovered item one' },
+            { value: 'h2', label: 'Hovered item two' },
+            { value: 'h3', label: 'Hovered item three' },
+        ],
+    });
+    ddHover.on('change', ({ label }) => {
+        document.getElementById('dd-hover-out').innerHTML = `<span>${label}</span>`;
+    });
+    const ddHoverBtn = document.getElementById('dd-hover-btn');
+    Floater.bind(ddHoverBtn, ddHover, { trigger: 'hover', arrowEl: document.getElementById('dd-hover-arrow') });
+
+    // ── 2. Number Picker ───────────────────────────────────────────────────
+
+    const NP_PRESETS = [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000];
+    const npField = document.getElementById('np-delay-field');
+
+    const npDelay = Floater.create('np-delay', 'number-picker', {
+        presets: NP_PRESETS,
+        currentValue: '500',
+        preferenceValue: '1000',
+        currentTitle: 'Current delay',
+        preferenceTitle: 'Recommended',
+        centerX: true,
+    });
+    npDelay.on('change', ({ value }) => {
+        npField.value = value;
+        npDelay.update({ currentValue: value });
+        document.getElementById('np-delay-out').innerHTML = `<span>${value}ms</span>`;
+    });
+    npField.addEventListener('focus', () => npDelay.open(npField));
+    npField.addEventListener('blur', () => setTimeout(() => { if (npDelay.isOpen) npDelay.close(); }, 150));
+    npField.addEventListener('click', e => e.stopPropagation());
+    document.getElementById('np-dec').addEventListener('click', () => {
+        const v = Math.max(100, (parseInt(npField.value) || 500) - 50);
+        npField.value = v;
+        npDelay.update({ currentValue: String(v) });
+        document.getElementById('np-delay-out').innerHTML = `<span>${v}ms</span>`;
+    });
+    document.getElementById('np-inc').addEventListener('click', () => {
+        const v = Math.min(5000, (parseInt(npField.value) || 500) + 50);
+        npField.value = v;
+        npDelay.update({ currentValue: String(v) });
+        document.getElementById('np-delay-out').innerHTML = `<span>${v}ms</span>`;
+    });
+
+    const npVol = Floater.create('np-vol', 'number-picker', {
+        presets: [0, 10, 25, 50, 75, 100],
+        currentValue: '75',
+        preferenceValue: '50',
+    });
+    npVol.on('change', ({ value }) => {
+        document.getElementById('np-vol-out').innerHTML = `<span>${value}%</span>`;
+        npVol.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('np-vol-btn'), npVol, { trigger: 'click' });
+
+    const npTitle = Floater.create('np-title', 'number-picker', {
+        presets: [5, 10, 15, 30, 60, 120, 300, 600],
+        currentValue: '30',
+        preferenceValue: '60',
+        currentTitle: 'Your setting',
+        preferenceTitle: 'Server default',
+    });
+    npTitle.on('change', ({ value }) => {
+        document.getElementById('np-title-out').innerHTML = `<span>${value}s</span>`;
+        npTitle.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('np-title-btn'), npTitle, { trigger: 'click' });
+
+    const npCx = Floater.create('np-cx', 'number-picker', {
+        presets: [8, 10, 12, 14, 16, 18, 24, 32, 48],
+        currentValue: '14',
+        centerX: true,
+    });
+    npCx.on('change', ({ value }) => {
+        document.getElementById('np-cx-out').innerHTML = `<span>${value}px</span>`;
+        npCx.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('np-cx-btn'), npCx, { trigger: 'click', centerX: true });
+
+    // ── 3. Text Suggestions ────────────────────────────────────────────────
+
+    const LANGS = ['JavaScript','TypeScript','Python','Rust','Go','C++','PHP','Ruby','Swift','Kotlin','Haskell','Elixir','Zig'];
+
+    const tsStrInp = document.getElementById('ts-str-inp');
+    const tsStr = Floater.create('ts-str', 'text-suggestions', { suggestions: LANGS });
+    tsStr.on('change', ({ value }) => {
+        tsStrInp.value = value;
+        document.getElementById('ts-str-out').innerHTML = `<span>${value}</span>`;
+        tsStr.close();
+    });
+    tsStrInp.addEventListener('focus', () => tsStr.open(tsStrInp, { minWidth: 200 }));
+    tsStrInp.addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        const filtered = q ? LANGS.filter(s => s.toLowerCase().includes(q)) : LANGS;
+        tsStr.update({ suggestions: filtered });
+        if (!tsStr.isOpen) tsStr.open(tsStrInp, { minWidth: 200 });
+    });
+    tsStrInp.addEventListener('blur', () => setTimeout(() => { if (tsStr.isOpen) tsStr.close(); }, 150));
+    tsStrInp.addEventListener('click', e => e.stopPropagation());
+
+    const ROLES = [
+        { value: 'admin', label: 'Administrator' },
+        { value: 'editor', label: 'Editor' },
+        { value: 'mod', label: 'Moderator' },
+        { value: 'contrib', label: 'Contributor' },
+        { value: 'viewer', label: 'Viewer (read-only)' },
+    ];
+    const tsObjInp = document.getElementById('ts-obj-inp');
+    const tsObj = Floater.create('ts-obj', 'text-suggestions', { suggestions: ROLES });
+    tsObj.on('change', ({ value, label }) => {
+        tsObjInp.value = label;
+        document.getElementById('ts-obj-out').innerHTML = `<span>${label}</span> (${value})`;
+        tsObj.close();
+    });
+    tsObjInp.addEventListener('focus', () => tsObj.open(tsObjInp, { minWidth: 210 }));
+    tsObjInp.addEventListener('click', e => e.stopPropagation());
+    tsObjInp.addEventListener('blur', () => setTimeout(() => { if (tsObj.isOpen) tsObj.close(); }, 150));
+
+    const tsBtn = Floater.create('ts-btn', 'text-suggestions', {
+        suggestions: ['Sunrise', 'Sunset', 'Midnight', 'Dawn', 'Dusk', 'Noon', 'Twilight'],
+    });
+    tsBtn.on('change', ({ value }) => {
+        document.getElementById('ts-btn-out').innerHTML = `<span>${value}</span>`;
+        tsBtn.close();
+    });
+    Floater.bind(document.getElementById('ts-btn-btn'), tsBtn, { trigger: 'click' });
+
+    const tsFc = Floater.create('ts-fc', 'text-suggestions', {
+        suggestions: ['Go', 'Rust', 'Zig', 'C'],
+    });
+    tsFc.on('change', ({ value }) => {
+        document.getElementById('ts-fc-out').innerHTML = `<span>${value}</span>`;
+        tsFc.close();
+    });
+    Floater.bind(document.getElementById('ts-fc-btn'), tsFc, { trigger: 'click', fitContent: true });
+
+    // ── 4. Popover ─────────────────────────────────────────────────────────
+
+    const popRich = Floater.create('pop-rich', 'popover', {
+        content: `<div style="padding:14px;max-width:280px;">
+            <strong style="font-size:14px;">Floater</strong>
+            <p style="font-size:12px;color:rgba(255,255,255,0.55);margin:6px 0 10px;">Registry-based UI floater manager.</p>
+            <ul style="font-size:12px;color:rgba(255,255,255,0.7);padding-left:16px;line-height:1.8;">
+                <li>17 built-in types</li>
+                <li>create() and attach() modes</li>
+                <li>Viewport-aware positioning</li>
+                <li>Containing-block compensation</li>
+                <li>Scroll-close auto-cleanup</li>
+                <li>Event emitter per instance</li>
+                <li>Custom type registration</li>
+            </ul>
+        </div>`,
+    });
+    Floater.bind(document.getElementById('pop-rich-btn'), popRich, { trigger: 'click' });
+
+    const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
+    const popLong = Floater.create('pop-long', 'popover', {
+        content: `<div style="padding:14px;max-width:260px;">${Array.from({ length: 8 }, (_, i) => `<p style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:8px;"><strong>Section ${i + 1}:</strong> ${lorem}</p>`).join('')}</div>`,
+        closeButton: true,
+    });
+    Floater.bind(document.getElementById('pop-long-btn'), popLong, { trigger: 'click' });
+
+    const popUpd = Floater.create('pop-upd', 'popover', {
+        content: `<div style="padding:10px 14px;"><span style="color:#69c769;">● OK</span> System nominal</div>`,
+    });
+    Floater.bind(document.getElementById('pop-upd-btn'), popUpd, { trigger: 'click' });
+    document.getElementById('pop-upd-ok').onclick = () => {
+        popUpd.update({ content: `<div style="padding:10px 14px;"><span style="color:#69c769;">● OK</span> System nominal</div>` });
+    };
+    document.getElementById('pop-upd-err').onclick = () => {
+        popUpd.update({ content: `<div style="padding:10px 14px;"><span style="color:#f5a623;">⚠ Error</span> Connection lost - ${new Date().toTimeString().slice(0, 8)}</div>` });
+    };
+
+    const popCx = Floater.create('pop-cx', 'popover', {
+        content: `<div style="padding:12px;text-align:center;min-width:200px;"><strong>Centered popover</strong><br><small style="color:rgba(255,255,255,0.4);">centerX: true</small></div>`,
+    });
+    Floater.bind(document.getElementById('pop-cx-btn'), popCx, { trigger: 'click', centerX: true });
+
+    for (const [id, gap] of [['pop-g0', 0], ['pop-g16', 16], ['pop-g32', 32]]) {
+        const f = Floater.create(id, 'popover', {
+            content: `<div style="padding:10px 14px;font-size:12px;">gap: ${gap}px</div>`,
+        });
+        Floater.bind(document.getElementById(`${id}-btn`), f, { trigger: 'click', gap });
+    }
+
+    // ── 5. Chips ────────────────────────────────────────────────────────────
+
+    const TAGS = ['Art','Music','Tech','Sports','Food','Travel','Gaming','Science','Books','Film'];
+    const chipsMulti = Floater.create('chips-multi', 'chips', {
+        items: TAGS.map(t => ({ value: t.toLowerCase(), label: t })),
+        selectedValues: ['tech', 'gaming'],
+    });
+    chipsMulti.on('change', ({ selected }) => {
+        document.getElementById('chips-multi-out').innerHTML = `<span>[${selected.join(', ') || 'none'}]</span>`;
+    });
+    Floater.bind(document.getElementById('chips-multi-btn'), chipsMulti, { trigger: 'click' });
+
+    const chipsMax = Floater.create('chips-max', 'chips', {
+        items: ['Red','Green','Blue','Yellow','Purple','Orange'].map(c => ({ value: c.toLowerCase(), label: c })),
+        maxSelect: 2,
+    });
+    chipsMax.on('change', ({ selected }) => {
+        document.getElementById('chips-max-out').innerHTML = `<span>[${selected.join(', ') || 'none'}]</span>`;
+    });
+    Floater.bind(document.getElementById('chips-max-btn'), chipsMax, { trigger: 'click' });
+
+    const chipsPref = Floater.create('chips-pref', 'chips', {
+        items: ['Red','Green','Blue','Yellow','Purple','Orange'].map(c => ({ value: c.toLowerCase(), label: c })),
+        preferenceValues: ['blue', 'green'],
+        maxSelect: 2,
+        closeOnMax: true,
+    });
+    chipsPref.on('change', ({ selected }) => {
+        document.getElementById('chips-pref-out').innerHTML = `<span>[${selected.join(', ') || 'none'}]</span>`;
+    });
+    Floater.bind(document.getElementById('chips-pref-btn'), chipsPref, { trigger: 'click' });
+
+    const FILTER_ITEMS = ['New','Featured','Sale','Popular','Limited'].map(f => ({ value: f.toLowerCase(), label: f }));
+    const chipsUpd = Floater.create('chips-upd', 'chips', {
+        items: FILTER_ITEMS,
+        selectedValues: ['new', 'featured'],
+    });
+    chipsUpd.on('change', ({ selected }) => {
+        document.getElementById('chips-upd-out').innerHTML = `<span>[${selected.join(', ') || 'none'}]</span>`;
+    });
+    Floater.bind(document.getElementById('chips-upd-btn'), chipsUpd, { trigger: 'click' });
+    document.getElementById('chips-all-btn').onclick = () => chipsUpd.update({ selectedValues: FILTER_ITEMS.map(f => f.value) });
+    document.getElementById('chips-none-btn').onclick = () => chipsUpd.update({ selectedValues: [] });
+
+    // ── 6. Slider ───────────────────────────────────────────────────────────
+
+    const slOne = Floater.create('sl-one', 'slider', {
+        sliders: [{ name: 'opacity', label: 'Opacity', min: 0, max: 100, step: 5, value: 80 }],
+    });
+    slOne.on('change', ({ value }) => {
+        document.getElementById('sl-one-out').innerHTML = `<span>${value}%</span>`;
+    });
+    Floater.bind(document.getElementById('sl-one-btn'), slOne, { trigger: 'click' });
+
+    const slRgb = Floater.create('sl-rgb', 'slider', {
+        sliders: [
+            { name: 'r', label: 'Red', min: 0, max: 255, step: 1, value: 85 },
+            { name: 'g', label: 'Green', min: 0, max: 255, step: 1, value: 136 },
+            { name: 'b', label: 'Blue', min: 0, max: 255, step: 1, value: 255 },
+        ],
+    });
+    const rgb = { r: 85, g: 136, b: 255 };
+    slRgb.on('change', ({ name, value }) => {
+        rgb[name] = parseInt(value);
+        document.getElementById('sl-rgb-out').innerHTML = `<span>rgb(${rgb.r}, ${rgb.g}, ${rgb.b})</span>`;
+    });
+    Floater.bind(document.getElementById('sl-rgb-btn'), slRgb, { trigger: 'click' });
+
+    const QUALITY_LABELS = ['', 'Lowest', 'Low', 'Medium', 'High', 'Ultra'];
+    const slStep = Floater.create('sl-step', 'slider', {
+        sliders: [{ name: 'quality', label: 'Quality (1-5)', min: 1, max: 5, step: 1, value: 3 }],
+    });
+    slStep.on('change', ({ value }) => {
+        document.getElementById('sl-step-out').innerHTML = `<span>${QUALITY_LABELS[value] ?? value}</span>`;
+    });
+    Floater.bind(document.getElementById('sl-step-btn'), slStep, { trigger: 'click' });
+
+    const slUpd = Floater.create('sl-upd', 'slider', {
+        sliders: [{ name: 'vol', label: 'Volume', min: 0, max: 100, step: 1, value: 60 }],
+    });
+    slUpd.on('change', ({ value }) => {
+        document.getElementById('sl-upd-out').innerHTML = `<span>${value}%</span>`;
+    });
+    Floater.bind(document.getElementById('sl-upd-btn'), slUpd, { trigger: 'click' });
+    document.getElementById('sl-upd-0').onclick = () => slUpd.update({ sliders: [{ name: 'vol', value: 0 }] });
+    document.getElementById('sl-upd-50').onclick = () => slUpd.update({ sliders: [{ name: 'vol', value: 50 }] });
+    document.getElementById('sl-upd-100').onclick = () => slUpd.update({ sliders: [{ name: 'vol', value: 100 }] });
+
+    // ── 7. Input Group ──────────────────────────────────────────────────────
+
+    const igBasic = Floater.create('ig-basic', 'input-group', {
+        inputs: [
+            { type: 'text', name: 'username', label: 'Username', value: 'JohnDoe', placeholder: 'Enter username' },
+            { type: 'number', name: 'age', label: 'Age', value: 28, min: 0, max: 150, step: 1 },
+            { type: 'checkbox', name: 'newsletter', label: 'Subscribe to newsletter', checked: true },
+        ],
+    });
+    const igBasicState = { username: 'JohnDoe', age: 28, newsletter: true };
+    igBasic.on('change', ({ name, value }) => {
+        igBasicState[name] = value;
+        document.getElementById('ig-basic-out').innerHTML = `<span>${JSON.stringify(igBasicState, null, 2)}</span>`;
+    });
+    igBasic.on('input', ({ name, value }) => {
+        igBasicState[name] = value;
+        document.getElementById('ig-basic-out').innerHTML = `<span>${JSON.stringify(igBasicState, null, 2)}</span>`;
+    });
+    Floater.bind(document.getElementById('ig-basic-btn'), igBasic, { trigger: 'click' });
+
+    const igNative = Floater.create('ig-native', 'input-group', {
+        inputs: [
+            { type: 'select', name: 'country', label: 'Country', value: 'uk', options: [
+                { value: 'uk', label: 'United Kingdom' },
+                { value: 'us', label: 'United States' },
+                { value: 'de', label: 'Germany' },
+                { value: 'fr', label: 'France' },
+                { value: 'jp', label: 'Japan' },
+            ]},
+            { type: 'textarea', name: 'bio', label: 'Bio', value: 'Tell us about yourself.', rows: 3 },
+            { type: 'text', name: 'website', label: 'Website', placeholder: 'https://…' },
+        ],
+    });
+    const igNativeState = { country: 'uk', bio: 'Tell us about yourself.', website: '' };
+    igNative.on('change', ({ name, value }) => {
+        igNativeState[name] = value;
+        document.getElementById('ig-native-out').innerHTML = `<span>${JSON.stringify(igNativeState, null, 2)}</span>`;
+    });
+    igNative.on('input', ({ name, value }) => {
+        igNativeState[name] = value;
+        document.getElementById('ig-native-out').innerHTML = `<span>${JSON.stringify(igNativeState, null, 2)}</span>`;
+    });
+    Floater.bind(document.getElementById('ig-native-btn'), igNative, { trigger: 'click' });
+
+    const igNested = Floater.create('ig-nested', 'input-group', {
+        inputs: [
+            { type: 'dropdown', name: 'theme', label: 'Theme', currentValue: 'dark', preferenceValue: 'auto', items: [
+                { value: 'dark', label: 'Dark' },
+                { value: 'light', label: 'Light' },
+                { value: 'auto', label: 'Auto' },
+            ]},
+            { type: 'chips', name: 'features', label: 'Features', items: [
+                { value: 'anim', label: 'Animations' },
+                { value: 'sound', label: 'Sounds' },
+                { value: 'tips', label: 'Tooltips' },
+                { value: 'badge', label: 'Badges' },
+            ], selectedValues: ['anim', 'tips'] },
+        ],
+    });
+    const igNestedState = { theme: 'dark', features: ['anim', 'tips'] };
+    igNested.on('change', ({ name, value, selected }) => {
+        igNestedState[name] = selected ?? value;
+        document.getElementById('ig-nested-out').innerHTML = `<span>${JSON.stringify(igNestedState, null, 2)}</span>`;
+    });
+    Floater.bind(document.getElementById('ig-nested-btn'), igNested, { trigger: 'click' });
+
+    const igUpd = Floater.create('ig-upd', 'input-group', {
+        inputs: [
+            { type: 'text', name: 'title', label: 'Title', value: '' },
+            { type: 'number', name: 'count', label: 'Count', value: 0, min: 0 },
+            { type: 'checkbox', name: 'active', label: 'Active', checked: false },
+        ],
+    });
+    const igUpdState = {};
+    igUpd.on('change', ({ name, value }) => {
+        igUpdState[name] = value;
+        document.getElementById('ig-upd-out').innerHTML = `<span>${JSON.stringify(igUpdState, null, 2)}</span>`;
+    });
+    igUpd.on('input', ({ name, value }) => {
+        igUpdState[name] = value;
+        document.getElementById('ig-upd-out').innerHTML = `<span>${JSON.stringify(igUpdState, null, 2)}</span>`;
+    });
+    Floater.bind(document.getElementById('ig-upd-btn'), igUpd, { trigger: 'click' });
+    document.getElementById('ig-upd-fill').onclick = () => igUpd.update({
+        inputs: [{ name: 'title', value: 'My entry' }, { name: 'count', value: 42 }, { name: 'active', value: true }],
+    });
+    document.getElementById('ig-upd-clear').onclick = () => igUpd.update({
+        inputs: [{ name: 'title', value: '' }, { name: 'count', value: 0 }, { name: 'active', value: false }],
+    });
+
+    // ── 8. Date / Time / Datetime ──────────────────────────────────────────
+
+    const today = new Date().toISOString().slice(0, 10);
+    const nowLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+    const dtDate = Floater.create('dt-date', 'date', { value: today });
+    dtDate.on('change', ({ value }) => { document.getElementById('dt-date-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-date-btn'), dtDate, { trigger: 'click' });
+
+    const dtTime = Floater.create('dt-time', 'time', { value: '12:00' });
+    dtTime.on('change', ({ value }) => { document.getElementById('dt-time-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-time-btn'), dtTime, { trigger: 'click' });
+
+    const dtDt = Floater.create('dt-dt', 'datetime', { value: nowLocal });
+    dtDt.on('change', ({ value }) => { document.getElementById('dt-dt-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-dt-btn'), dtDt, { trigger: 'click' });
+
+    const plus30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const plus7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const dtConstrained = Floater.create('dt-constrained', 'date', { value: today, min: today, max: plus30 });
+    dtConstrained.on('change', ({ value }) => { document.getElementById('dt-constrained-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-constrained-btn'), dtConstrained, { trigger: 'click' });
+
+    const dtStep = Floater.create('dt-step', 'time', { value: '09:00', step: 900 });
+    dtStep.on('change', ({ value }) => { document.getElementById('dt-step-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-step-btn'), dtStep, { trigger: 'click' });
+
+    const dtUpd = Floater.create('dt-upd', 'date', { value: today });
+    dtUpd.on('change', ({ value }) => { document.getElementById('dt-upd-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-upd-btn'), dtUpd, { trigger: 'click' });
+    document.getElementById('dt-upd-today').onclick = () => dtUpd.update({ value: today });
+    document.getElementById('dt-upd-next').onclick = () => dtUpd.update({ value: plus7 });
+
+    const dtNoArrow = Floater.create('dt-noarrow', 'date', { value: today, showArrows: false });
+    dtNoArrow.on('change', ({ value }) => { document.getElementById('dt-noarrow-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-noarrow-btn'), dtNoArrow, { trigger: 'click' });
+
+    const dtNoInput = Floater.create('dt-noinput', 'time', { value: '09:00', allowTyping: false });
+    dtNoInput.on('change', ({ value }) => { document.getElementById('dt-noinput-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-noinput-btn'), dtNoInput, { trigger: 'click' });
+
+    const dtNoPicker = Floater.create('dt-nopicker', 'datetime', { value: nowLocal, showPicker: false });
+    dtNoPicker.on('change', ({ value }) => { document.getElementById('dt-nopicker-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-nopicker-btn'), dtNoPicker, { trigger: 'click' });
+
+    const dtReadonly = Floater.create('dt-readonly', 'date', { value: today, showArrows: false, showPicker: false, allowTyping: false });
+    dtReadonly.on('change', ({ value }) => { document.getElementById('dt-readonly-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('dt-readonly-btn'), dtReadonly, { trigger: 'click' });
+
+    // ── 9. attach() mode ───────────────────────────────────────────────────
+
+    const attDdEl = document.getElementById('att-dd-el');
+    const attDd = Floater.attach('att-dd', attDdEl, { type: 'dropdown' });
+    attDd.on('change', ({ label, el }) => {
+        for (const o of attDdEl.querySelectorAll('.fs-dropdown-option')) o.classList.remove('fs-opt-current');
+        if (el) el.classList.add('fs-opt-current');
+        document.getElementById('att-dd-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('att-dd-btn'), attDd, { trigger: 'click', arrowEl: document.getElementById('att-dd-arrow') });
+
+    const attNpEl = document.getElementById('att-np-el');
+    const attNpField = document.getElementById('att-np-field');
+    const attNp = Floater.attach('att-np', attNpEl, { type: 'number-picker', centerX: true, currentValue: '1000', preferenceValue: '2000' });
+    attNp.on('change', ({ value }) => {
+        attNpField.value = value;
+        document.getElementById('att-np-out').innerHTML = `<span>${value}</span>`;
+        attNp.update({ currentValue: value });
+    });
+    attNpField.addEventListener('focus', () => attNp.open(attNpField));
+    attNpField.addEventListener('blur', () => setTimeout(() => { if (attNp.isOpen) attNp.close(); }, 150));
+    attNpField.addEventListener('click', e => e.stopPropagation());
+
+    const attCustomEl = document.getElementById('att-custom-el');
+    const attCustom = Floater.attach('att-custom', attCustomEl, {});
+    attCustomEl.addEventListener('click', e => e.stopPropagation());
+    Floater.bind(document.getElementById('att-custom-btn'), attCustom, { trigger: 'click' });
+
+    // ── 10. Advanced options ───────────────────────────────────────────────
+
+    for (const [id, label] of [['co-a', 'Floater A'], ['co-b', 'Floater B'], ['co-c', 'Floater C']]) {
+        const f = Floater.create(id, 'popover', {
+            content: `<div style="padding:10px 14px;"><strong>${label}</strong><br><small style="color:rgba(255,255,255,0.4);">closeOthers: false</small></div>`,
+            closeOthers: false,
+        });
+        Floater.bind(document.getElementById(`${id}-btn`), f, { trigger: 'click', closeOthers: false });
+    }
+
+    for (const [id, gap] of [['gap-0', 0], ['gap-12', 12], ['gap-28', 28]]) {
+        const f = Floater.create(id, 'dropdown', {
+            items: [{ value: '1', label: 'Item one' }, { value: '2', label: 'Item two' }, { value: '3', label: 'Item three' }],
+        });
+        Floater.bind(document.getElementById(`${id}-btn`), f, { trigger: 'click', gap });
+    }
+
+    const mwF = Floater.create('mw', 'dropdown', {
+        items: [{ value: 'a', label: 'Short' }, { value: 'b', label: 'Also short' }],
+        minWidth: 320,
+    });
+    Floater.bind(document.getElementById('mw-btn'), mwF, { trigger: 'click' });
+
+    const silentF = Floater.create('silent', 'dropdown', {
+        items: [{ value: 'a', label: 'Silent A' }, { value: 'b', label: 'Silent B' }],
+        onChange: false,
+    });
+    Floater.bind(document.getElementById('silent-btn'), silentF, { trigger: 'click' });
+
+    const maF = Floater.create('ma', 'dropdown', {
+        items: [{ value: 'one', label: 'Option One' }, { value: 'two', label: 'Option Two' }, { value: 'three', label: 'Option Three' }],
+    });
+    maF.on('change', ({ label }) => { document.getElementById('ma-out').innerHTML = `<span>${label}</span>`; });
+    Floater.bind('.ma-btn', maF, { trigger: 'click' });
+
+    const ctxZoneF = Floater.create('ctx-zone', 'dropdown', {
+        items: [{ value: 'cut', label: 'Cut' }, { value: 'copy', label: 'Copy' }, { value: 'paste', label: 'Paste' }, { value: 'select-all', label: 'Select All' }],
+    });
+    ctxZoneF.on('change', ({ label }) => { document.getElementById('ctx-zone-out').innerHTML = `<span>${label}</span>`; });
+    Floater.bind(document.getElementById('ctx-zone'), ctxZoneF, { trigger: 'contextmenu' });
+
+    const focusTrigF = Floater.create('focus-trig', 'text-suggestions', {
+        suggestions: ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape'],
+    });
+    focusTrigF.on('change', ({ value }) => { document.getElementById('focus-trig-out').innerHTML = `<span>${value}</span>`; });
+    Floater.bind(document.getElementById('focus-trig-inp'), focusTrigF, { trigger: 'focus' });
+
+    // ── 11. Custom types ───────────────────────────────────────────────────
+
+    Floater.registerType('color-palette', {
+        build(opts) {
+            const el = document.createElement('div');
+            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
+            if (opts.id) el.id = opts.id;
+            el.style.cssText = 'display:grid;grid-template-columns:repeat(6,28px);gap:4px;padding:10px;';
+            for (const color of (opts.colors || [])) {
+                const sw = document.createElement('button');
+                sw.type = 'button';
+                sw.title = color;
+                sw.dataset.color = color;
+                sw.style.cssText = `width:28px;height:28px;border-radius:4px;background:${color};border:2px solid ${color === opts.currentValue ? 'white' : 'transparent'};cursor:pointer;transition:border-color 0.1s;padding:0;`;
+                el.appendChild(sw);
+            }
+            return el;
+        },
+        init(instance) {
+            instance.el.addEventListener('click', e => e.stopPropagation());
+            instance.el.addEventListener('click', e => {
+                const sw = e.target.closest('[data-color]');
+                if (!sw) return;
+                for (const s of instance.el.querySelectorAll('[data-color]')) s.style.borderColor = 'transparent';
+                sw.style.borderColor = 'white';
+                instance.emit('change', { value: sw.dataset.color });
+                instance.close();
+            });
+        },
+        onUpdate(instance, opts) {
+            if (!opts.currentValue) return;
+            for (const s of instance.el.querySelectorAll('[data-color]')) {
+                s.style.borderColor = s.dataset.color === opts.currentValue ? 'white' : 'transparent';
+            }
+        },
+        onClickOutside: instance => instance.close(),
+    });
+
+    const PALETTE = [
+        '#ff4444','#ff8844','#ffcc44','#88cc44','#44cc88','#44cccc',
+        '#4488ff','#8844ff','#cc44cc','#ff44cc','#ff6677','#ffaa55',
+        '#aaffaa','#aaaaff','#ffffff','#aaaaaa','#666666','#222222',
+    ];
+    let currentColor = '#5588ff';
+    const colorPicker = Floater.create('color-picker', 'color-palette', {
+        colors: PALETTE,
+        currentValue: currentColor,
+    });
+    colorPicker.on('change', ({ value }) => {
+        currentColor = value;
+        document.getElementById('col-swatch').style.background = value;
+        document.getElementById('col-val').textContent = value;
+        colorPicker.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('col-btn'), colorPicker, { trigger: 'click' });
+
+    Floater.registerType('star-rating', {
+        build(opts) {
+            const el = document.createElement('div');
+            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
+            if (opts.id) el.id = opts.id;
+            el.style.cssText = 'display:flex;gap:2px;padding:10px;';
+            const cur = opts.value || 0;
+            const max = opts.max || 5;
+            for (let i = 1; i <= max; i++) {
+                const star = document.createElement('button');
+                star.type = 'button';
+                star.dataset.rating = i;
+                star.textContent = '★';
+                star.style.cssText = `font-size:30px;background:none;border:none;cursor:pointer;color:${i <= cur ? '#ffcc00' : 'rgba(255,255,255,0.18)'};transition:color 0.1s;padding:0 2px;line-height:1;`;
+                el.appendChild(star);
+            }
+            return el;
+        },
+        init(instance) {
+            const highlight = n => {
+                for (const s of instance.el.querySelectorAll('[data-rating]')) {
+                    s.style.color = parseInt(s.dataset.rating) <= n ? '#ffcc00' : 'rgba(255,255,255,0.18)';
+                }
+            };
+            instance.el.addEventListener('click', e => e.stopPropagation());
+            instance.el.addEventListener('mouseover', e => {
+                const s = e.target.closest('[data-rating]');
+                if (s) highlight(parseInt(s.dataset.rating));
+            });
+            instance.el.addEventListener('mouseout', () => highlight(instance.opts.value || 0));
+            instance.el.addEventListener('click', e => {
+                const s = e.target.closest('[data-rating]');
+                if (!s) return;
+                const rating = parseInt(s.dataset.rating);
+                instance.opts.value = rating;
+                highlight(rating);
+                instance.emit('change', { value: rating });
+                instance.close();
+            });
+        },
+        onClickOutside: instance => instance.close(),
+    });
+
+    const starF = Floater.create('star', 'star-rating', { max: 5, value: 3 });
+    starF.on('change', ({ value }) => {
+        document.getElementById('star-out').innerHTML = `<span>${'★'.repeat(value)}${'☆'.repeat(5 - value)}</span> (${value}/5)`;
+        starF.opts.value = value;
+    });
+    Floater.bind(document.getElementById('star-btn'), starF, { trigger: 'click' });
+
+    Floater.registerType('emoji-picker', {
+        build(opts) {
+            const el = document.createElement('div');
+            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
+            if (opts.id) el.id = opts.id;
+            const cols = opts.columns || 6;
+            el.style.cssText = `display:grid;grid-template-columns:repeat(${cols},1fr);gap:2px;padding:8px;`;
+            for (const emoji of (opts.emojis || [])) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = emoji;
+                btn.dataset.value = emoji;
+                btn.title = emoji;
+                btn.style.cssText = 'font-size:22px;background:none;border:none;cursor:pointer;padding:3px;border-radius:4px;transition:background 0.1s;line-height:1;';
+                btn.addEventListener('mouseover', () => { btn.style.background = 'rgba(255,255,255,0.1)'; });
+                btn.addEventListener('mouseout', () => { btn.style.background = 'none'; });
+                el.appendChild(btn);
+            }
+            return el;
+        },
+        init(instance) {
+            instance.el.addEventListener('click', e => e.stopPropagation());
+            instance.el.addEventListener('click', e => {
+                const btn = e.target.closest('[data-value]');
+                if (!btn) return;
+                instance.emit('change', { value: btn.dataset.value });
+                instance.close();
+            });
+        },
+        onClickOutside: instance => instance.close(),
+    });
+
+    const emojiF = Floater.create('emoji', 'emoji-picker', {
+        emojis: ['😀','😂','😍','🥰','😎','🤔','🙄','😴','🤯','🥳','👍','👎','❤️','🔥','⚡','🎉','🎸','🚀','💎','🦊','🐉','🌊','⭐','🌙','☀️','🍕','🎮','📷','🎵','🏆'],
+        currentValue: '🎮',
+        preferenceValue: '🔥',
+    });
+    emojiF.on('change', ({ value }) => {
+        document.getElementById('emoji-out').innerHTML = `<span>${value}</span>`;
+        document.getElementById('emoji-btn').textContent = `${value} Pick icon`;
+        emojiF.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('emoji-btn'), emojiF, { trigger: 'click' });
+
+    // ── 12. Dynamic operations ─────────────────────────────────────────────
+
+    let dynAlive = true;
+    function makeDynTarget() {
+        const f = Floater.create('dyn-target', 'dropdown', {
+            items: [{ value: '1', label: 'One' }, { value: '2', label: 'Two' }, { value: '3', label: 'Three' }],
+        });
+        dynAlive = true;
+        document.getElementById('dyn-status').innerHTML = `exists: <span>yes</span>`;
+        return f;
+    }
+    makeDynTarget();
+    document.getElementById('dyn-target-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!dynAlive) return;
+        Floater.get('dyn-target')?.toggle(this);
+    });
+    document.getElementById('dyn-create').onclick = () => {
+        if (dynAlive) { document.getElementById('dyn-status').innerHTML = `exists: <span>yes (already exists)</span>`; return; }
+        makeDynTarget();
+    };
+    document.getElementById('dyn-destroy').onclick = () => {
+        Floater.remove('dyn-target');
+        dynAlive = false;
+        document.getElementById('dyn-status').innerHTML = `exists: <span style="color:rgba(255,100,100,0.85)">no</span>`;
+    };
+
+    for (const [sfx, label] of [['x', 'Test X (popover)'], ['y', 'Test Y (popover)'], ['z', 'Test Z (popover)']]) {
+        const f = Floater.create(`ca-${sfx}`, 'popover', {
+            content: `<div style="padding:10px 14px;"><strong>${label}</strong><br><small style="color:rgba(255,255,255,0.4);">closeOthers: false</small></div>`,
+            closeOthers: false,
+            preferAbove: true,
+        });
+        Floater.bind(document.getElementById(`ca-open-${sfx}`), f, { trigger: 'click', closeOthers: false });
+    }
+
+    document.getElementById('api-close-all').addEventListener('click', e => {
+        e.stopPropagation();
+        Floater.closeAll();
+    });
+    document.getElementById('api-close-dd').addEventListener('click', e => {
+        e.stopPropagation();
+        Floater.closeAll(i => i.type === 'dropdown');
+    });
+
+    const markF = Floater.create('mark-upd', 'dropdown', {
+        items: [
+            { value: 'a', label: 'Alpha' },
+            { value: 'b', label: 'Beta' },
+            { value: 'c', label: 'Gamma' },
+        ],
+        currentValue: 'b',
+        preferenceValue: 'a',
+        preferenceTitle: 'Site default',
+        closeOnOutsideClick: false,
+        preferAbove: true,
+        closeButton: true,
+    });
+    markF.on('change', ({ label }) => {
+        document.getElementById('mark-out').innerHTML = `<span>${label}</span>`;
+    });
+    Floater.bind(document.getElementById('mark-btn'), markF, { trigger: 'click' });
+    document.getElementById('mark-cur-a').onclick = () => markF.update({ currentValue: 'a' });
+    document.getElementById('mark-cur-b').onclick = () => markF.update({ currentValue: 'b' });
+    document.getElementById('mark-pref-c').onclick = () => markF.update({ preferenceValue: 'c' });
+
+    document.getElementById('api-has').onclick = () => {
+        document.getElementById('api-out').innerHTML = `<span>has('mark-upd'): ${Floater.has('mark-upd')}</span>`;
+    };
+    document.getElementById('api-get').onclick = () => {
+        const inst = Floater.get('mark-upd');
+        if (!inst) { document.getElementById('api-out').innerHTML = `<span>null</span>`; return; }
+        document.getElementById('api-out').innerHTML = `<span>id: "${inst.id}"\ntype: "${inst.type}"\nisOpen: ${inst.isOpen}\ncurrentValue: "${inst.opts.currentValue}"\npreferenceValue: "${inst.opts.preferenceValue}"</span>`;
+    };
+
+    // ── 12b. Programmatic / remote triggers ───────────────────────────────
+
+    const trigTimerAnchor = document.getElementById('trig-timer-anchor');
+    const trigTimerOut = document.getElementById('trig-timer-out');
+    const trigTimer = Floater.create('trig-timer', 'popover', {
+        content: '<div style="padding:10px 14px;font-size:12px;">Opened automatically after 1.5s</div>',
+    });
+    let timerHandle = null;
+    document.getElementById('trig-timer-btn').addEventListener('click', function() {
+        trigTimerOut.innerHTML = 'waiting 1.5s…';
+        clearTimeout(timerHandle);
+        timerHandle = setTimeout(() => {
+            trigTimer.open(trigTimerAnchor);
+            trigTimerOut.innerHTML = `<span>opened</span>`;
+        }, 1500);
+    });
+
+    const trigRemoteAnchor = document.getElementById('trig-remote-anchor');
+    const trigRemote = Floater.create('trig-remote', 'dropdown', {
+        items: [
+            { value: 'r1', label: 'Remote item one' },
+            { value: 'r2', label: 'Remote item two' },
+            { value: 'r3', label: 'Remote item three' },
+        ],
+    });
+    trigRemote.on('change', ({ label }) => {
+        document.getElementById('trig-remote-out').innerHTML = `<span>${label}</span>`;
+    });
+    document.getElementById('trig-remote-trigger').addEventListener('click', function(e) {
+        e.stopPropagation();
+        trigRemote.toggle(trigRemoteAnchor);
+    });
+
+    const trigChainBAnchor = document.getElementById('trig-chain-b-anchor');
+    const trigChainOut = document.getElementById('trig-chain-out');
+
+    const trigChainB = Floater.create('trig-chain-b', 'dropdown', {
+        items: [
+            { value: 'b1', label: 'Step 2 - choice one' },
+            { value: 'b2', label: 'Step 2 - choice two' },
+            { value: 'b3', label: 'Step 2 - choice three' },
+        ],
+    });
+    trigChainB.on('change', ({ label }) => {
+        trigChainOut.innerHTML = `<span>Step 2: ${label}</span>`;
+    });
+
+    const trigChainA = Floater.create('trig-chain-a', 'dropdown', {
+        items: [
+            { value: 'a1', label: 'Alpha' },
+            { value: 'a2', label: 'Beta' },
+            { value: 'a3', label: 'Gamma' },
+        ],
+    });
+    trigChainA.on('change', ({ label }) => {
+        trigChainOut.innerHTML = `Step 1: ${label} →`;
+        setTimeout(() => trigChainB.open(trigChainBAnchor), 80);
+    });
+    Floater.bind(document.getElementById('trig-chain-a-btn'), trigChainA, { trigger: 'click', arrowEl: document.getElementById('trig-chain-a-arrow') });
+
+    const trigLabelInp = document.getElementById('trig-label-inp');
+    const LABEL_SUGGS = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Heidi'];
+    const trigLabel = Floater.create('trig-label', 'text-suggestions', {
+        suggestions: LABEL_SUGGS,
+    });
+    trigLabel.on('change', ({ value }) => {
+        trigLabelInp.value = value;
+        document.getElementById('trig-label-out').innerHTML = `<span>${value}</span>`;
+        trigLabel.close();
+    });
+    trigLabelInp.addEventListener('focus', () => trigLabel.open(trigLabelInp, { minWidth: 180 }));
+    trigLabelInp.addEventListener('blur', () => setTimeout(() => { if (trigLabel.isOpen) trigLabel.close(); }, 150));
+    trigLabelInp.addEventListener('click', e => e.stopPropagation());
+    trigLabelInp.addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        const filtered = q ? LABEL_SUGGS.filter(s => s.toLowerCase().includes(q)) : LABEL_SUGGS;
+        trigLabel.update({ suggestions: filtered });
+    });
+
+    // persistOnOutsideClick + closeOnEscape:false so ONLY the buttons control it
+    const trigProgAnchor = document.getElementById('trig-prog-anchor');
+    const trigProg = Floater.create('trig-prog', 'popover', {
+        content: '<div style="padding:10px 14px;font-size:12px;">Opened programmatically - only close() button dismisses this.</div>',
+        persistOnOutsideClick: true,
+        closeOnEscape: false,
+    });
+    document.getElementById('trig-prog-open').addEventListener('click', e => {
+        e.stopPropagation();
+        trigProg.open(trigProgAnchor, { preferAbove: true });
+    });
+    document.getElementById('trig-prog-close').addEventListener('click', e => {
+        e.stopPropagation();
+        trigProg.close();
+    });
+    document.getElementById('trig-prog-toggle').addEventListener('click', e => {
+        e.stopPropagation();
+        trigProg.toggle(trigProgAnchor, { preferAbove: true });
+    });
+    window._trigProg = trigProg;
+
+    // ── 15. Persist on outside click / floater-in-floater ─────────────────
+
+    const persistF = Floater.create('persist-f', 'persist', {
+        content: '<div style="padding:12px 16px;max-width:240px;font-size:12px;">This floater ignores outside clicks. Use the "Close it" button or press Escape.</div>',
+        persistOnOutsideClick: true,
+        preferAbove: true,
+    });
+    persistF.on('show', () => { document.getElementById('persist-out').innerHTML = `<span>open</span>`; });
+    persistF.on('hide', () => { document.getElementById('persist-out').innerHTML = `<span>closed</span>`; });
+    document.getElementById('persist-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        persistF.open(this);
+    });
+    document.getElementById('persist-close-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        persistF.close();
+    });
+
+    // Floater-within-floater: child uses closeOthers:false so parent stays open
+    const nestedChild = Floater.create('nested-child', 'dropdown', {
+        items: [
+            { value: 'c1', label: 'Child option 1' },
+            { value: 'c2', label: 'Child option 2' },
+            { value: 'c3', label: 'Child option 3' },
+        ],
+        closeOthers: false,
+    });
+    nestedChild.on('change', ({ label }) => {
+        document.getElementById('nested-out').innerHTML = `<span>${label}</span>`;
+    });
+
+    const nestedParent = Floater.create('nested-parent', 'popover', {
+        content: (() => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'padding:12px;min-width:200px;';
+            const p = document.createElement('p');
+            p.style.cssText = 'font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px;';
+            p.textContent = 'Parent floater - click button to open child:';
+            const btn = document.createElement('button');
+            btn.id = 'nested-child-trigger';
+            btn.className = 'btn';
+            btn.style.width = '100%';
+            btn.textContent = 'Open child dropdown';
+            wrap.appendChild(p);
+            wrap.appendChild(btn);
+            return wrap.outerHTML;
+        })(),
+    });
+    Floater.bind(document.getElementById('nested-parent-btn'), nestedParent, { trigger: 'click', arrowEl: document.getElementById('nested-parent-arrow') });
+    nestedParent.el.addEventListener('click', e => {
+        if (!e.target.closest('#nested-child-trigger')) return;
+        e.stopPropagation();
+        nestedChild.toggle(e.target.closest('#nested-child-trigger'), { closeOthers: false });
+    });
+
+    // Nested close-both: child selection closes child AND parent
+    const nested2Child = Floater.create('nested2-child', 'dropdown', {
+        items: [
+            { value: 'c1', label: 'Select - closes both' },
+            { value: 'c2', label: 'Select - closes both' },
+            { value: 'c3', label: 'Select - closes both' },
+        ],
+        closeOthers: false,
+    });
+    nested2Child.on('change', ({ label }) => {
+        document.getElementById('nested2-out').innerHTML = `<span>${label}</span>`;
+        nested2Child.close();
+        nested2Parent.close();
+    });
+
+    const nested2Parent = Floater.create('nested2-parent', 'popover', {
+        content: (() => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'padding:12px;min-width:200px;';
+            const p = document.createElement('p');
+            p.style.cssText = 'font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:10px;';
+            p.textContent = 'Selecting from child closes both:';
+            const btn = document.createElement('button');
+            btn.id = 'nested2-child-trigger';
+            btn.className = 'btn';
+            btn.style.width = '100%';
+            btn.textContent = 'Open child dropdown';
+            wrap.appendChild(p);
+            wrap.appendChild(btn);
+            return wrap.outerHTML;
+        })(),
+    });
+    Floater.bind(document.getElementById('nested2-parent-btn'), nested2Parent, { trigger: 'click', arrowEl: document.getElementById('nested2-parent-arrow') });
+    nested2Parent.el.addEventListener('click', e => {
+        if (!e.target.closest('#nested2-child-trigger')) return;
+        e.stopPropagation();
+        nested2Child.toggle(e.target.closest('#nested2-child-trigger'), { closeOthers: false });
+    });
+
+    // ── 16. Modal ──────────────────────────────────────────────────────────
+
+    const modalF = Floater.create('modal-f', 'modal', {
+        modal: true,
+        protected: true,
+        content: (() => {
+            return `<div style="padding:20px;min-width:260px;max-width:320px;">
+                <p style="font-size:14px;font-weight:500;margin-bottom:8px;">Confirm action</p>
+                <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:16px;">This modal blocks the page. You must choose an option to continue.</p>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="modal-cancel" class="btn" style="font-size:12px;">Cancel</button>
+                    <button id="modal-confirm" class="btn btn-blue" style="font-size:12px;">Confirm</button>
+                </div>
+            </div>`;
+        })(),
+    });
+    document.getElementById('modal-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        modalF.open(this, { centerX: true });
+        document.getElementById('modal-out').innerHTML = 'waiting for interaction…';
+    });
+    modalF.el.addEventListener('click', e => {
+        if (e.target.closest('#modal-cancel')) {
+            modalF.close();
+            document.getElementById('modal-out').innerHTML = `<span>cancelled</span>`;
+        } else if (e.target.closest('#modal-confirm')) {
+            modalF.close();
+            document.getElementById('modal-out').innerHTML = `<span>confirmed</span>`;
+        }
+    });
+    modalF.on('hide', () => {
+        const out = document.getElementById('modal-out');
+        if (out.textContent === 'waiting for interaction…') out.innerHTML = `<span>dismissed</span>`;
+    });
+
+    const modalScrollF = Floater.create('modal-scroll-f', 'modal', {
+        modal: true,
+        blockScroll: true,
+        content: `<div style="padding:16px 20px;min-width:240px;max-width:300px;">
+            <p style="font-size:13px;font-weight:500;margin-bottom:6px;">Scroll is locked</p>
+            <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:14px;">Try scrolling the page. Restored on close.</p>
+            <button id="modal-scroll-close" class="btn btn-red" style="font-size:12px;">Close</button>
+        </div>`,
+        closeButton: false,
+    });
+    modalScrollF.on('show', () => { document.getElementById('modal-scroll-out').innerHTML = '<span style="color:#69c769;">open - scroll locked</span>'; });
+    modalScrollF.on('hide', () => { document.getElementById('modal-scroll-out').innerHTML = '<span>closed - scroll restored</span>'; });
+    document.getElementById('modal-scroll-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        modalScrollF.open(this, { centerX: true });
+    });
+    modalScrollF.el.addEventListener('click', e => {
+        if (e.target.closest('#modal-scroll-close')) modalScrollF.close();
+    });
+
+    const modalBackdropF = Floater.create('modal-backdrop-f', 'modal', {
+        modal: true,
+        blockClicks: true,
+        content: `<div style="padding:16px 20px;min-width:240px;max-width:300px;">
+            <p style="font-size:13px;font-weight:500;margin-bottom:6px;">Clicks are blocked</p>
+            <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:14px;">Clicking the backdrop does nothing. No document handlers fire.</p>
+            <button id="modal-backdrop-close" class="btn btn-red" style="font-size:12px;">Close</button>
+        </div>`,
+    });
+    modalBackdropF.el.addEventListener('click', e => {
+        if (e.target.closest('#modal-backdrop-close')) modalBackdropF.close();
+    });
+    modalBackdropF.on('show', () => { document.getElementById('modal-backdrop-out').innerHTML = '<span style="color:#69c769;">open - clicks blocked</span>'; });
+    modalBackdropF.on('hide', () => { document.getElementById('modal-backdrop-out').innerHTML = '<span>closed</span>'; });
+    document.getElementById('modal-backdrop-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        modalBackdropF.open(this, { centerX: true });
+    });
+
+    // ── 17. Fetch / Audio / Video ──────────────────────────────────────────
+
+    const fetchF = Floater.create('fetch-f', 'fetch', {
+        url: 'https://jsonplaceholder.typicode.com/todos/1',
+        closeButton: true,
+        transform: text => {
+            try {
+                const d = JSON.parse(text);
+                return `<pre style="font-size:11px;white-space:pre-wrap;">${JSON.stringify(d, null, 2)}</pre>`;
+            } catch { return text; }
+        },
+    });
+    fetchF.on('loaded', () => { document.getElementById('fetch-out').innerHTML = `<span>loaded</span>`; });
+    fetchF.on('error', ({ error }) => { document.getElementById('fetch-out').innerHTML = `<span style="color:rgba(255,120,120,0.9);">error: ${error.message}</span>`; });
+    Floater.bind(document.getElementById('fetch-btn'), fetchF, { trigger: 'click' });
+
+    const fetchImgF = Floater.create('fetch-img-f', 'fetch', {
+        url: 'https://picsum.photos/seed/floater/320/200',
+    });
+    fetchImgF.on('loaded', () => { document.getElementById('fetch-img-out').innerHTML = `<span>loaded</span>`; });
+    fetchImgF.on('error', ({ error }) => { document.getElementById('fetch-img-out').innerHTML = `<span style="color:rgba(255,120,120,0.9);">error: ${error.message}</span>`; });
+    Floater.bind(document.getElementById('fetch-img-btn'), fetchImgF, { trigger: 'click' });
+
+    const fetchXhrF = Floater.create('fetch-xhr-f', 'fetch', {
+        url: 'https://jsonplaceholder.typicode.com/todos/2',
+        fetchMethod: 'xhr',
+        transform: text => {
+            try {
+                const d = JSON.parse(text);
+                return `<pre style="font-size:11px;white-space:pre-wrap;">${JSON.stringify(d, null, 2)}</pre>`;
+            } catch { return text; }
+        },
+    });
+    fetchXhrF.on('loaded', () => { document.getElementById('fetch-xhr-out').innerHTML = `<span>loaded via XHR</span>`; });
+    fetchXhrF.on('error', ({ error }) => { document.getElementById('fetch-xhr-out').innerHTML = `<span style="color:rgba(255,120,120,0.9);">error: ${error.message}</span>`; });
+    Floater.bind(document.getElementById('fetch-xhr-btn'), fetchXhrF, { trigger: 'click' });
+
+    const audioF = Floater.create('audio-f', 'audio', {
+        src: '',
+    });
+    Floater.bind(document.getElementById('audio-btn'), audioF, { trigger: 'click' });
+    document.getElementById('audio-src-a').onclick = () => {
+        audioF.update({ src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' });
+        document.getElementById('audio-track-out').innerHTML = `<span>Track A</span>`;
+    };
+    document.getElementById('audio-src-b').onclick = () => {
+        audioF.update({ src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' });
+        document.getElementById('audio-track-out').innerHTML = `<span>Track B</span>`;
+    };
+
+    const audioMemF = Floater.create('audio-mem-f', 'audio', {
+        src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        rememberProgress: true,
+        resetOnClose: false,
+    });
+    audioMemF.on('show', () => { document.getElementById('audio-mem-out').innerHTML = `<span>playing (position restored)</span>`; });
+    audioMemF.on('hide', () => { document.getElementById('audio-mem-out').innerHTML = `<span>closed (position saved)</span>`; });
+    Floater.bind(document.getElementById('audio-mem-btn'), audioMemF, { trigger: 'click' });
+
+    const videoF = Floater.create('video-f', 'video', {
+        src: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        muted: true,
+        resetOnOpen: true,
+    });
+    Floater.bind(document.getElementById('video-btn'), videoF, { trigger: 'click' });
+
+    const videoMemF = Floater.create('video-mem-f', 'video', {
+        src: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        muted: true,
+        rememberProgress: true,
+        resetOnClose: false,
+    });
+    Floater.bind(document.getElementById('video-mem-btn'), videoMemF, { trigger: 'click' });
+
+    // ── 11 cont. Custom types (confirm-dialog, context-menu, progress-panel) ──────────────────────────────────────────────
+
+    Floater.registerType('confirm-dialog', {
+        build(opts) {
+            const el = document.createElement('div');
+            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
+            el.style.cssText = 'padding:14px;min-width:220px;';
+            el.innerHTML = `
+                <p style="font-size:13px;font-weight:500;margin-bottom:6px;">${opts.title || 'Are you sure?'}</p>
+                <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:14px;">${opts.message || ''}</p>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button class="btn" data-action="cancel" style="font-size:12px;">${opts.cancelLabel || 'Cancel'}</button>
+                    <button class="btn btn-red" data-action="confirm" style="font-size:12px;">${opts.confirmLabel || 'Delete'}</button>
+                </div>`;
+            return el;
+        },
+        init(instance) {
+            instance.el.addEventListener('click', e => e.stopPropagation());
+            instance.el.addEventListener('click', e => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                instance.emit('change', { action: btn.dataset.action });
+                instance.close();
+            });
+        },
+        onClickOutside: instance => instance.close(),
+    });
+
+    const confirmF = Floater.create('confirm-f', 'confirm-dialog', {
+        title: 'Delete item?',
+        message: 'This cannot be undone.',
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel',
+    });
+    confirmF.on('change', ({ action }) => {
+        document.getElementById('confirm-out').innerHTML = `<span>${action}</span>`;
+    });
+    Floater.bind(document.getElementById('confirm-btn'), confirmF, { trigger: 'click', centerX: true });
+
+    // context-menu is a built-in type - no registerType() needed
+    // global:true wires the contextmenu event on document automatically
+    const ctxMenu = Floater.create('ctx-menu', 'context-menu', {
+        global: true,
+        items: [
+            { value: 'open', label: 'Open', icon: '📂', shortcut: 'Enter' },
+            { value: 'copy', label: 'Copy', icon: '📋', shortcut: 'Ctrl+C' },
+            { value: 'rename', label: 'Rename', icon: '✏️', shortcut: 'F2' },
+            { separator: true },
+            { value: 'delete', label: 'Delete', icon: '🗑', danger: true, shortcut: 'Del' },
+        ],
+    });
+    const ctxValDisplay = document.getElementById('ctx-val-display');
+    ctxMenu.on('show', ({ anchor }) => {
+        const via = anchor && anchor.type === 'contextmenu' ? 'right-click'
+            : anchor && anchor.type === 'click' ? 'button'
+            : 'programmatic';
+        document.getElementById('ctx-out').textContent = `opened via: ${via}`;
+    });
+    ctxMenu.on('change', ({ value, label }) => {
+        document.getElementById('ctx-out').innerHTML = `<span>${value}</span> <span style="opacity:0.5;font-size:11px;">${label}</span>`;
+        ctxValDisplay.style.display = '';
+        ctxValDisplay.textContent = `ctx: ${value}`;
+    });
+    document.getElementById('ctx-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        ctxMenu.open(e);
+    });
+
+    Floater.registerType('progress-panel', {
+        build(opts) {
+            const el = document.createElement('div');
+            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
+            el.style.cssText = 'padding:14px;min-width:220px;';
+            el.innerHTML = `
+                <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:8px;" data-label>${opts.label || 'Processing...'}</div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:3px;height:6px;overflow:hidden;">
+                    <div data-bar style="height:100%;background:rgba(80,160,255,0.8);width:${opts.progress || 0}%;transition:width 0.3s;"></div>
+                </div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;text-align:right;" data-pct>${opts.progress || 0}%</div>`;
+            return el;
+        },
+        init(instance) {
+            instance.el.addEventListener('click', e => e.stopPropagation());
+        },
+        onUpdate(instance, opts) {
+            if (opts.progress != null) {
+                const bar = instance.el.querySelector('[data-bar]');
+                const pct = instance.el.querySelector('[data-pct]');
+                if (bar) bar.style.width = opts.progress + '%';
+                if (pct) pct.textContent = opts.progress + '%';
+            }
+            if (opts.label != null) {
+                const lbl = instance.el.querySelector('[data-label]');
+                if (lbl) lbl.textContent = opts.label;
+            }
+        },
+        onClickOutside: instance => instance.close(),
+    });
+
+    let progInterval = null;
+    const progF = Floater.create('prog-f', 'progress-panel', { label: 'Processing...', progress: 0 });
+    document.getElementById('prog-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        clearInterval(progInterval);
+        progF.update({ progress: 0, label: 'Processing...' });
+        progF.open(this, { centerX: true });
+        let pct = 0;
+        progInterval = setInterval(() => {
+            pct = Math.min(100, pct + Math.floor(Math.random() * 12) + 3);
+            progF.update({ progress: pct, label: pct < 100 ? 'Processing...' : 'Complete!' });
+            if (pct >= 100) {
+                clearInterval(progInterval);
+                document.getElementById('prog-out').innerHTML = `<span>done</span>`;
+                setTimeout(() => progF.close(), 800);
+            }
+        }, 200);
+    });
+
+    // Expose key instances to console for programmatic testing
+    // e.g. Floater.get('trig-prog').open(document.getElementById('trig-prog-anchor'))
+    window._fs = Floater;
+
+    // ── 19. Image floater ─────────────────────────────────────────────────
+
+    const imgBasic = Floater.create('img-basic', 'image', {
+        src: 'https://picsum.photos/seed/floater-a/320/200',
+        alt: 'Random landscape',
+        caption: 'Random image via picsum.photos',
+        width: '320px',
+    });
+    Floater.bind(document.getElementById('img-basic-btn'), imgBasic, { trigger: 'click' });
+
+    const imgUpd = Floater.create('img-upd', 'image', {
+        src: 'https://picsum.photos/seed/floater-a/320/200',
+        caption: 'Image A',
+        width: '320px',
+        closeOnOutsideClick: false,
+        closeButton: true,
+        preferAbove: true,
+    });
+    Floater.bind(document.getElementById('img-upd-btn'), imgUpd, { trigger: 'click' });
+    document.getElementById('img-upd-a').onclick = () => imgUpd.update({ src: 'https://picsum.photos/seed/floater-a/320/200', caption: 'Image A' });
+    document.getElementById('img-upd-b').onclick = () => imgUpd.update({ src: 'https://picsum.photos/seed/floater-b/320/200', caption: 'Image B' });
+
+    const imgClose = Floater.create('img-close', 'image', {
+        src: 'https://picsum.photos/seed/floater-c/320/200',
+        caption: 'Close with the X button',
+        width: '320px',
+        closeButton: true,
+    });
+    Floater.bind(document.getElementById('img-close-btn'), imgClose, { trigger: 'click' });
+
+    // ── 20. toFrontOn - z-index stacking ─────────────────────────────────
+
+    const tfrDefs = [
+        { id: 'tfr-click', anchorId: 'tfr-anchor-a', mode: 'click', minWidth: 160, color: 'rgba(70,120,220,0.25)', label: "click → front" },
+        { id: 'tfr-hover', anchorId: 'tfr-anchor-b', mode: 'hover', minWidth: 190, color: 'rgba(70,180,120,0.25)', label: "hover → front" },
+        { id: 'tfr-none', anchorId: 'tfr-anchor-c', mode: 'none', minWidth: 220, color: 'rgba(180,100,70,0.25)', label: "no auto-front" },
+    ];
+    for (const def of tfrDefs) {
+        Floater.create(def.id, 'popover', {
+            content: `<div style="padding:14px 18px;min-width:${def.minWidth}px;background:${def.color};">
+                <strong style="font-size:12px;">toFrontOn: '${def.mode}'</strong><br>
+                <small style="color:rgba(255,255,255,0.4);">${def.label}</small>
+            </div>`,
+            closeOthers: false,
+            persistOnOutsideClick: true,
+            toFrontOn: def.mode,
+        });
+    }
+    document.getElementById('tfr-open-all').addEventListener('click', e => {
+        e.stopPropagation();
+        for (const def of tfrDefs) Floater.get(def.id)?.open(document.getElementById(def.anchorId), { closeOthers: false, preferAbove: true });
+    });
+    document.getElementById('tfr-close-all').addEventListener('click', e => {
+        e.stopPropagation();
+        for (const def of tfrDefs) Floater.get(def.id)?.close();
+    });
+
+    // ── 21. Scroll behaviour ──────────────────────────────────────────────
+
+    const scrollClose = Floater.create('scroll-close', 'popover', {
+        content: '<div style="padding:10px 14px;min-width:180px;">I close when you scroll<br><small style="color:rgba(255,255,255,0.35);">closeOnScroll: true</small></div>',
+        closeOnScroll: true,
+    });
+    scrollClose.on('hide', () => { document.getElementById('scroll-close-out').innerHTML = '<span>closed</span>'; });
+    scrollClose.on('show', () => { document.getElementById('scroll-close-out').innerHTML = '<span style="color:#69c769;">open</span>'; });
+    Floater.bind(document.getElementById('scroll-close-btn'), scrollClose, { trigger: 'click' });
+
+    const scrollKeep = Floater.create('scroll-keep', 'popover', {
+        content: '<div style="padding:10px 14px;min-width:180px;">I stay open on scroll<br><small style="color:rgba(255,255,255,0.35);">closeOnScroll: false</small></div>',
+        closeOnScroll: false,
+    });
+    scrollKeep.on('hide', () => { document.getElementById('scroll-keep-out').innerHTML = '<span>closed</span>'; });
+    scrollKeep.on('show', () => { document.getElementById('scroll-keep-out').innerHTML = '<span style="color:#69c769;">open</span>'; });
+    Floater.bind(document.getElementById('scroll-keep-btn'), scrollKeep, { trigger: 'click' });
+
+    const scrollPersist = Floater.create('scroll-persist', 'popover', {
+        content: '<div style="padding:10px 14px;min-width:180px;">Click outside me: nothing<br>Scroll: also nothing<br><small style="color:rgba(255,255,255,0.35);">persistOnOutsideClick: true</small></div>',
+        persistOnOutsideClick: true,
+        closeButton: true,
+    });
+    scrollPersist.on('hide', () => { document.getElementById('scroll-persist-out').innerHTML = '<span>closed</span>'; });
+    scrollPersist.on('show', () => { document.getElementById('scroll-persist-out').innerHTML = '<span style="color:#69c769;">open</span>'; });
+    Floater.bind(document.getElementById('scroll-persist-btn'), scrollPersist, { trigger: 'click' });
+
+    const scrollModal = Floater.create('scroll-modal', 'popover', {
+        content: '<div style="padding:14px 18px;min-width:220px;"><strong>Modal</strong><br><small style="color:rgba(255,255,255,0.4);">Backdrop blocks interaction. Scroll is not locked but floater stays open.</small></div>',
+        modal: true,
+        closeButton: true,
+    });
+    scrollModal.on('hide', () => { document.getElementById('scroll-modal-out').innerHTML = '<span>closed</span>'; });
+    scrollModal.on('show', () => { document.getElementById('scroll-modal-out').innerHTML = '<span style="color:#69c769;">open</span>'; });
+    document.getElementById('scroll-modal-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        scrollModal.open(this, { centerX: true });
+    });
+    document.getElementById('scroll-modal-close').addEventListener('click', () => scrollModal.close());
+
+    // ── 13. Viewport edge cases ────────────────────────────────────────────
+
+    const EDGE_ITEMS = [
+        { value: '1', label: 'Near viewport edge' },
+        { value: '2', label: 'Should flip if needed' },
+        { value: '3', label: 'CenterX true' },
+        { value: '4', label: 'Long enough to test' },
+    ];
+
+    for (const id of ['edge-tl', 'edge-tc', 'edge-tr', 'edge-bl', 'edge-bc', 'edge-br']) {
+        const f = Floater.create(id, 'dropdown', { items: EDGE_ITEMS, centerX: true, });
+        Floater.bind(document.getElementById(id), f, { trigger: 'click' });
+    }
+
+    // ── 14. preferRight / preferLeft / centerY ─────────────────────────────
+
+    const SIDE_ITEMS = [
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Beta' },
+        { value: 'c', label: 'Gamma' },
+        { value: 'd', label: 'Delta' },
+    ];
+
+    const sideRight = Floater.create('side-right', 'dropdown', { items: SIDE_ITEMS, fitContent: true, preferRight: true });
+    sideRight.on('change', ({ label }) => { document.getElementById('side-right-out').innerHTML = `<span>${label}</span>`; });
+    Floater.bind(document.getElementById('side-right-btn'), sideRight, { trigger: 'click', arrowEl: document.getElementById('side-right-arrow') });
+
+    const sideLeft = Floater.create('side-left', 'dropdown', { items: SIDE_ITEMS, fitContent: true, preferLeft: true });
+    sideLeft.on('change', ({ label }) => { document.getElementById('side-left-out').innerHTML = `<span>${label}</span>`; });
+    Floater.bind(document.getElementById('side-left-btn'), sideLeft, { trigger: 'click', arrowEl: document.getElementById('side-left-arrow') });
+
+    const sideCY = Floater.create('side-cy', 'dropdown', { items: SIDE_ITEMS, fitContent: true, preferRight: true, centerY: true });
+    sideCY.on('change', ({ label }) => { document.getElementById('side-cy-out').innerHTML = `<span>${label}</span>`; });
+    Floater.bind(document.getElementById('side-cy-btn'), sideCY, { trigger: 'click', arrowEl: document.getElementById('side-cy-arrow') });
+
+    // ── 23. Press trigger + scroll select ─────────────────────────────────
+
+    const PRESS_ITEMS = [
+        { value: 'red', label: 'Red' },
+        { value: 'green', label: 'Green' },
+        { value: 'blue', label: 'Blue' },
+        { value: 'yellow', label: 'Yellow' },
+        { value: 'purple', label: 'Purple' },
+    ];
+
+    const pressF = Floater.create('press-f', 'dropdown', {
+        items: PRESS_ITEMS,
+        currentValue: 'red',
+    });
+    pressF.on('change', ({ label, value }) => {
+        document.getElementById('press-out').innerHTML = `<span>${label}</span> (${value})`;
+        pressF.update({ currentValue: value });
+    });
+    Floater.bind(document.getElementById('press-btn'), pressF, { trigger: 'press' });
+
+    const scrollSelItems = [
+        { value: 'alpha', label: 'Alpha' },
+        { value: 'beta', label: 'Beta' },
+        { value: 'gamma', label: 'Gamma' },
+        { value: 'delta', label: 'Delta' },
+        { value: 'epsilon', label: 'Epsilon' },
+    ];
+
+    const scrollSelF = Floater.create('scroll-sel-f', 'dropdown', {
+        items: scrollSelItems,
+        currentValue: 'alpha',
+    });
+    scrollSelF.on('change', ({ label, value }) => {
+        document.getElementById('scroll-sel-out').innerHTML = `<span>${label}</span> (${value})`;
+    });
+    Floater.bind(document.getElementById('scroll-sel-btn'), scrollSelF, { trigger: 'click', scrollSelect: true });
+
+    const scrollNumInp = document.getElementById('scroll-num-inp');
+    const scrollNumF = Floater.create('scroll-num-f', 'number-picker', {
+        presets: [5, 10, 25, 50, 100],
+        step: 1,
+        min: 0,
+        max: 9999,
+        currentValue: 10,
+    });
+    scrollNumF.on('change', ({ value }) => {
+        scrollNumInp.value = value;
+        document.getElementById('scroll-num-out').innerHTML = `<span>${value}</span>`;
+        scrollNumF.update({ currentValue: Number(value) });
+    });
+    scrollNumInp.addEventListener('input', () => {
+        scrollNumF.update({ currentValue: parseFloat(scrollNumInp.value) || 0 });
+    });
+    Floater.bind(scrollNumInp, scrollNumF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollNumStepInp = document.getElementById('scroll-num-step-inp');
+    const scrollNumStepF = Floater.create('scroll-num-step-f', 'number-picker', {
+        presets: [0, 25, 50, 100, 150, 200],
+        step: 5,
+        min: 0,
+        max: 200,
+        currentValue: 50,
+        scrollMode: 'step',
+    });
+    scrollNumStepF.on('change', ({ value }) => {
+        scrollNumStepInp.value = value;
+        document.getElementById('scroll-num-step-out').innerHTML = `<span>${value}</span>`;
+        scrollNumStepF.update({ currentValue: Number(value) });
+    });
+    scrollNumStepInp.addEventListener('input', () => {
+        scrollNumStepF.update({ currentValue: parseFloat(scrollNumStepInp.value) || 0 });
+    });
+    Floater.bind(scrollNumStepInp, scrollNumStepF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollDateInp = document.getElementById('scroll-date-inp');
+    scrollDateInp.value = today;
+    const scrollDateF = Floater.create('scroll-date-f', 'date', { value: today });
+    scrollDateF.on('change', ({ value }) => {
+        scrollDateInp.value = value;
+        document.getElementById('scroll-date-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollDateInp, scrollDateF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollTimeInp = document.getElementById('scroll-time-inp');
+    scrollTimeInp.value = '12:00';
+    const scrollTimeF = Floater.create('scroll-time-f', 'time', { value: '12:00' });
+    scrollTimeF.on('change', ({ value }) => {
+        scrollTimeInp.value = value;
+        document.getElementById('scroll-time-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollTimeInp, scrollTimeF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollDtInp = document.getElementById('scroll-dt-inp');
+    scrollDtInp.value = nowLocal;
+    const scrollDtF = Floater.create('scroll-dt-f', 'datetime', { value: nowLocal });
+    scrollDtF.on('change', ({ value }) => {
+        scrollDtInp.value = value;
+        document.getElementById('scroll-dt-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollDtInp, scrollDtF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollDatePanelInp = document.getElementById('scroll-date-panel-inp');
+    scrollDatePanelInp.value = today;
+    const scrollDatePanelF = Floater.create('scroll-date-panel-f', 'date', { value: today, scrollPanel: true });
+    scrollDatePanelF.on('change', ({ value }) => {
+        scrollDatePanelInp.value = value;
+        document.getElementById('scroll-date-panel-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollDatePanelInp, scrollDatePanelF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollTimeNocolsInp = document.getElementById('scroll-time-nocols-inp');
+    scrollTimeNocolsInp.value = '12:00';
+    const scrollTimeNocolsF = Floater.create('scroll-time-nocols-f', 'time', { value: '12:00', scrollCols: false });
+    scrollTimeNocolsF.on('change', ({ value }) => {
+        scrollTimeNocolsInp.value = value;
+        document.getElementById('scroll-time-nocols-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollTimeNocolsInp, scrollTimeNocolsF, { trigger: 'focus', scrollSelect: true });
+
+    const scrollDtFullInp = document.getElementById('scroll-dt-full-inp');
+    scrollDtFullInp.value = nowLocal;
+    const scrollDtFullF = Floater.create('scroll-dt-full-f', 'datetime', { value: nowLocal, scrollPanel: true, scrollCols: true });
+    scrollDtFullF.on('change', ({ value }) => {
+        scrollDtFullInp.value = value;
+        document.getElementById('scroll-dt-full-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollDtFullInp, scrollDtFullF, { trigger: 'focus', scrollSelect: true });
+
+    // ── 18. setDefaults() ─────────────────────────────────────────────────
+    // These calls are last so all earlier demo floaters are unaffected.
+    Floater.setDefaults({ gap: 10 });
+    Floater.setDefaults('dropdown', { minWidth: 200 });
+
+    const sdGapF = Floater.create('sd-gap', 'dropdown', {
+        items: [{ value: 'a', label: 'Alpha' }, { value: 'b', label: 'Beta' }, { value: 'c', label: 'Gamma' }],
+    });
+    Floater.bind(document.getElementById('sd-gap-btn'), sdGapF, { trigger: 'click' });
+
+    const sdMinwF = Floater.create('sd-minw', 'dropdown', {
+        items: [{ value: 'x', label: 'X' }, { value: 'y', label: 'Y' }],
+    });
+    Floater.bind(document.getElementById('sd-minw-btn'), sdMinwF, { trigger: 'click' });
+
+    const sdOverrideF = Floater.create('sd-override', 'dropdown', {
+        items: [{ value: 'x', label: 'X' }, { value: 'y', label: 'Y' }],
+        minWidth: 80,
+    });
+    Floater.bind(document.getElementById('sd-override-btn'), sdOverrideF, { trigger: 'click' });
+
+})();
+</script>
+
+</body>
+</html>
