@@ -751,19 +751,38 @@ const Floater = (() => {
                 _scrollBlockCount++;
             }
 
-            // modal, persistOnOutsideClick, and protected are always scroll-immune (static)
+            // modal and protected are always scroll-immune (static)
             // closeOnScroll: false (default) → follows anchor on scroll (repositions)
             // closeOnScroll: true → closes on scroll
-            const noScrollClose = merged.modal || merged.persistOnOutsideClick || merged.protected;
+            const scrollImmune = merged.modal || merged.protected;
             if (this._scrollCleanup) this._scrollCleanup();
-            if (!noScrollClose) {
+            if (!scrollImmune) {
                 const scrollTargets = _getScrollAncestors(anchor);
                 if (merged.closeOnScroll === true) {
                     const onScroll = () => { if (this._isOpen) this.close(); };
                     for (const target of scrollTargets) target.addEventListener('scroll', onScroll, { passive: true, once: true });
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
                 } else {
-                    const onScroll = () => { if (this._isOpen) _position(this._openAnchor, this._el, this._openOpts || {}); };
+                    const openRect = anchor.getBoundingClientRect();
+                    const openScrolls = scrollTargets.map(t => t === window ? window.scrollY : t.scrollTop);
+                    const onScroll = () => {
+                        if (!this._isOpen) return;
+                        if (this._openAnchor.isConnected) {
+                            _position(this._openAnchor, this._el, this._openOpts || {});
+                            return;
+                        }
+                        let vertDelta = 0;
+                        scrollTargets.forEach((t, i) => {
+                            vertDelta += (t === window ? window.scrollY : t.scrollTop) - openScrolls[i];
+                        });
+                        _position({
+                            getBoundingClientRect: () => ({
+                                top: openRect.top - vertDelta, bottom: openRect.bottom - vertDelta,
+                                left: openRect.left, right: openRect.right,
+                                width: openRect.width, height: openRect.height,
+                            }),
+                        }, this._el, this._openOpts || {});
+                    };
                     for (const target of scrollTargets) target.addEventListener('scroll', onScroll, { passive: true });
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
                 }
@@ -1455,9 +1474,9 @@ const Floater = (() => {
             const AUDIO_EXT = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'opus'];
             const detectedMedia = respType !== 'auto' ? respType
                 : IMAGE_EXT.includes(ext) ? 'image'
-                : VIDEO_EXT.includes(ext) ? 'video'
-                : AUDIO_EXT.includes(ext) ? 'audio'
-                : null;
+                    : VIDEO_EXT.includes(ext) ? 'video'
+                        : AUDIO_EXT.includes(ext) ? 'audio'
+                            : null;
 
             const _reposition = () => {
                 if (instance.isOpen && instance._openAnchor) _position(instance._openAnchor, instance.el, instance._openOpts || {});
