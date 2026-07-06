@@ -1,5 +1,5 @@
 /*!
- * floater-ui v0.1.0
+ * floater-ui v0.2.0
  * https://github.com/Alphaproject1998/floater-ui
  * (c) 2026 Jack Briggs - MIT License
  */
@@ -17,6 +17,11 @@ const Floater = (() => {
     let _scrollBlockCount = 0;
     const _registry = new Map();
     const _types = {};
+    const _globalHandlers = {};
+    const _animations = {};
+    for (const name of ['fade', 'scale', 'slide-down', 'slide-up', 'slide-left', 'slide-right']) {
+        _animations[name] = { inClass: `fs-anim-${name}-enter`, outClass: `fs-anim-${name}-exit`, duration: 150, easing: 'ease' };
+    }
 
     (() => {
         const s = document.createElement('style');
@@ -105,6 +110,16 @@ const Floater = (() => {
             '.fs-modal-panel{display:block;}',
             '#FloaterBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:8999;pointer-events:auto;display:none;}',
             '.fs-press-hover{background:rgba(255,255,255,0.09);color:white;}',
+            '.fs-anim-fade-enter,.fs-anim-fade-exit{opacity:0;}',
+            '.fs-anim-scale-enter,.fs-anim-scale-exit{opacity:0;transform:scale(0.9);}',
+            '.fs-anim-slide-down-enter{opacity:0;transform:translateY(-8px);}',
+            '.fs-anim-slide-down-exit{opacity:0;transform:translateY(8px);}',
+            '.fs-anim-slide-up-enter{opacity:0;transform:translateY(8px);}',
+            '.fs-anim-slide-up-exit{opacity:0;transform:translateY(-8px);}',
+            '.fs-anim-slide-left-enter{opacity:0;transform:translateX(8px);}',
+            '.fs-anim-slide-left-exit{opacity:0;transform:translateX(-8px);}',
+            '.fs-anim-slide-right-enter{opacity:0;transform:translateX(-8px);}',
+            '.fs-anim-slide-right-exit{opacity:0;transform:translateX(8px);}',
         ].join('');
         (document.head || document.documentElement).appendChild(s);
     })();
@@ -140,6 +155,23 @@ const Floater = (() => {
         if (!_backdrop) return;
         const anyModal = [..._registry.values()].some(i => i.isOpen && i._opts.modal);
         _backdrop.style.display = anyModal ? 'block' : 'none';
+    }
+
+    // .fs-focused / .fs-blurred are hooks only - no default styling. The consumer's own CSS
+    // decides what a blurred floater looks like (e.g. dimmed via opacity + box-shadow).
+    function _updateFocusClasses() {
+        let top = null;
+        let topZ = -Infinity;
+        for (const inst of _registry.values()) {
+            if (!inst.isOpen) continue;
+            const z = parseInt(inst.el.style.zIndex, 10) || 0;
+            if (z >= topZ) { topZ = z; top = inst; }
+        }
+        for (const inst of _registry.values()) {
+            if (!inst.isOpen) continue;
+            inst.el.classList.toggle('fs-focused', inst === top);
+            inst.el.classList.toggle('fs-blurred', inst !== top);
+        }
     }
 
     // Finds the nearest ancestor that creates a containing block for position:fixed.
@@ -298,6 +330,59 @@ const Floater = (() => {
         if (arrowEl) arrowEl.style.transform = '';
     }
 
+    function _resolveAnim(name) {
+        return name ? (_animations[name] || null) : null;
+    }
+
+    // animateIn/OutDuration/Easing win over the shared animationDuration/Easing when in and out need to differ.
+    function _effectiveAnim(anim, opts, direction) {
+        if (!anim) return null;
+        const durationOverride = direction === 'in' ? opts.animateInDuration : opts.animateOutDuration;
+        const easingOverride = direction === 'in' ? opts.animateInEasing : opts.animateOutEasing;
+        return {
+            inClass: anim.inClass,
+            outClass: anim.outClass,
+            duration: durationOverride != null ? durationOverride : (opts.animationDuration != null ? opts.animationDuration : anim.duration),
+            easing: easingOverride || opts.animationEasing || anim.easing,
+        };
+    }
+
+    // Forces a reflow between setting the "from" state and enabling transitions, so an "in" animation
+    // has a rendered starting frame to transition from despite the element being hidden the same tick.
+    function _animate(el, anim, direction, done) {
+        const duration = anim.duration != null ? anim.duration : 150;
+        const easing = anim.easing || 'ease';
+        const cls = direction === 'in' ? anim.inClass : anim.outClass;
+
+        el.style.transition = 'none';
+        if (direction === 'in') el.classList.add(cls);
+        void el.offsetWidth;
+
+        let raf;
+        const cleanup = () => {
+            el.removeEventListener('transitionend', onEnd);
+            clearTimeout(fallback);
+            cancelAnimationFrame(raf);
+            el.style.transition = '';
+        };
+        const onEnd = e => {
+            if (e.target !== el) return;
+            el.classList.remove(cls);
+            cleanup();
+            done();
+        };
+        const fallback = setTimeout(() => onEnd({ target: el }), duration + 50);
+
+        raf = requestAnimationFrame(() => {
+            el.style.transition = `opacity ${duration}ms ${easing}, transform ${duration}ms ${easing}`;
+            el.addEventListener('transitionend', onEnd);
+            if (direction === 'in') el.classList.remove(cls);
+            else el.classList.add(cls);
+        });
+
+        return () => { el.classList.remove(cls); cleanup(); };
+    }
+
     function _applyMarkers(el, opts) {
         const attr = opts.valueAttr || 'data-value';
         const cur = opts.currentValue != null ? String(opts.currentValue) : null;
@@ -433,7 +518,7 @@ const Floater = (() => {
     }
 
     function _buildTimeSpinner(opts) {
-        const el = _buildFloaterEl('fs-spinner-panel', opts);
+        const content = _buildContent('fs-spinner-panel');
         const step = opts.step || 60;
         const showSec = step < 60;
         const showArrows = opts.showArrows !== false;
@@ -451,14 +536,14 @@ const Floater = (() => {
             _addSpinnerSep(spinner, ':');
             _addSpinnerCol(spinner, 's', t.s, 0, 59, step, false, showArrows, allowTyping);
         }
-        const nativeInput = _addNativePickerInput(el, 'time', 'fs-time-input', opts);
+        const nativeInput = _addNativePickerInput(content, 'time', 'fs-time-input', opts);
         if (showPicker) _addPickerBtn(spinner, nativeInput, '⏰');
-        el.appendChild(spinner);
-        return el;
+        content.appendChild(spinner);
+        return content;
     }
 
     function _buildDateSpinner(opts) {
-        const el = _buildFloaterEl('fs-spinner-panel', opts);
+        const content = _buildContent('fs-spinner-panel');
         const showArrows = opts.showArrows !== false;
         const showPicker = opts.showPicker !== false;
         const allowTyping = opts.allowTyping !== false;
@@ -472,14 +557,14 @@ const Floater = (() => {
         _addSpinnerCol(spinner, 'mo', dt.mo, 1, 12, 1, false, showArrows, allowTyping);
         _addSpinnerSep(spinner, '-');
         _addSpinnerCol(spinner, 'd', dt.d, 1, 31, 1, false, showArrows, allowTyping);
-        const nativeInput = _addNativePickerInput(el, 'date', 'fs-date-input', opts);
+        const nativeInput = _addNativePickerInput(content, 'date', 'fs-date-input', opts);
         if (showPicker) _addPickerBtn(spinner, nativeInput, '📅');
-        el.appendChild(spinner);
-        return el;
+        content.appendChild(spinner);
+        return content;
     }
 
     function _buildDatetimeSpinner(opts) {
-        const el = _buildFloaterEl('fs-spinner-panel', opts);
+        const content = _buildContent('fs-spinner-panel');
         const showArrows = opts.showArrows !== false;
         const showPicker = opts.showPicker !== false;
         const allowTyping = opts.allowTyping !== false;
@@ -513,10 +598,10 @@ const Floater = (() => {
             _addSpinnerSep(spinner, ':');
             _addSpinnerCol(spinner, 's', t.s, 0, 59, step, false, showArrows, allowTyping);
         }
-        const nativeInput = _addNativePickerInput(el, 'datetime-local', 'fs-datetime-input', opts);
+        const nativeInput = _addNativePickerInput(content, 'datetime-local', 'fs-datetime-input', opts);
         if (showPicker) _addPickerBtn(spinner, nativeInput, '📅');
-        el.appendChild(spinner);
-        return el;
+        content.appendChild(spinner);
+        return content;
     }
 
     function _segVal(el) { return el ? (parseInt(el.value ?? el.textContent) || 0) : 0; }
@@ -670,6 +755,17 @@ const Floater = (() => {
         }
     }
 
+    function _matchesFilter(instance, filter) {
+        if (!filter) return true;
+        if (typeof filter === 'function') return filter(instance);
+        if (typeof filter === 'string') return instance.type === filter;
+        if (filter.type && instance.type !== filter.type) return false;
+        if (filter.id && instance.id !== filter.id) return false;
+        if (filter.idPrefix && !instance.id.startsWith(filter.idPrefix)) return false;
+        if (filter.open !== undefined && instance.isOpen !== filter.open) return false;
+        return true;
+    }
+
     class FloaterInstance {
         constructor(id, el, type, opts) {
             this._id = id;
@@ -687,6 +783,7 @@ const Floater = (() => {
             this._openAnchor = null;
             this._openOpts = null;
             this._blockingScroll = false;
+            this._animCancel = null;
         }
 
         get id() { return this._id; }
@@ -708,8 +805,10 @@ const Floater = (() => {
         }
 
         emit(event, data) {
-            for (const fn of (this._handlers[event] || [])) fn(data, this);
-            _log('event', `${this._id}:${event}`, { data, instance: this });
+            const payload = Object.assign({ id: this._id, type: this._type, opts: this._opts, trigger: 'programmatic' }, data);
+            for (const fn of (this._handlers[event] || [])) fn(payload, this);
+            for (const fn of (_globalHandlers[event] || [])) fn(this, payload);
+            _log('event', `${this._id}:${event}`, { data: payload, instance: this });
             return this;
         }
 
@@ -718,6 +817,8 @@ const Floater = (() => {
             if (merged.arrowEl) this._currentArrowEl = merged.arrowEl;
             this._openAnchor = anchor;
             this._openOpts = merged;
+            const trigger = merged.trigger || 'programmatic';
+            this.emit('trigger', { anchor, trigger });
             const typeDef = _types[this._type];
             if (typeDef && typeDef.onOpen) {
                 if (typeDef.onOpen(this, anchor, merged) === false) return this;
@@ -759,10 +860,10 @@ const Floater = (() => {
             if (!scrollImmune) {
                 const scrollTargets = _getScrollAncestors(anchor);
                 if (merged.closeOnScroll === true) {
-                    const onScroll = () => { if (this._isOpen) this.close(); };
+                    const onScroll = () => { if (this._isOpen) this.close({ trigger: 'scroll-reposition' }); };
                     for (const target of scrollTargets) target.addEventListener('scroll', onScroll, { passive: true, once: true });
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
-                } else {
+                } else if (anchor && typeof anchor.getBoundingClientRect === 'function') {
                     const openRect = anchor.getBoundingClientRect();
                     const openScrolls = scrollTargets.map(t => t === window ? window.scrollY : t.scrollTop);
                     const onScroll = () => {
@@ -788,17 +889,27 @@ const Floater = (() => {
                 }
             }
 
-            this.emit('show', { anchor, opts: merged });
+            _updateFocusClasses();
+            this.emit('show', { anchor, opts: merged, trigger });
+            if (this._animCancel) { this._animCancel(); this._animCancel = null; }
+            const inAnim = _effectiveAnim(_resolveAnim(merged.animateIn), merged, 'in');
+            if (inAnim) {
+                this._animCancel = _animate(this._el, inAnim, 'in', () => {
+                    this._animCancel = null;
+                    this.emit('shown', { trigger });
+                });
+            } else {
+                this.emit('shown', { trigger });
+            }
             return this;
         }
 
         close(closeOpts) {
             if (!this._isOpen) return this;
             const merged = Object.assign({}, this._opts, closeOpts);
+            const trigger = merged.trigger || 'programmatic';
             const typeDef = _types[this._type];
             if (typeDef && typeDef.onClose) typeDef.onClose(this, merged);
-            _unposition(this._el, merged.arrowEl || this._currentArrowEl || null);
-            this._currentArrowEl = null;
             this._isOpen = false;
             if (_openCount > 0) _openCount--;
             if (this._scrollCleanup) { this._scrollCleanup(); this._scrollCleanup = null; }
@@ -808,16 +919,34 @@ const Floater = (() => {
                 if (!_scrollBlockCount) document.body.style.overflow = '';
             }
             if (this._opts.modal) _updateBackdropState();
-            if (this._attached && this._originalParent) {
-                if (this._originalNextSibling && this._originalNextSibling.parentNode === this._originalParent) {
-                    this._originalParent.insertBefore(this._el, this._originalNextSibling);
-                } else {
-                    this._originalParent.appendChild(this._el);
+            _updateFocusClasses();
+
+            const finish = () => {
+                _unposition(this._el, merged.arrowEl || this._currentArrowEl || null);
+                this._currentArrowEl = null;
+                if (this._attached && this._originalParent) {
+                    if (this._originalNextSibling && this._originalNextSibling.parentNode === this._originalParent) {
+                        this._originalParent.insertBefore(this._el, this._originalNextSibling);
+                    } else {
+                        this._originalParent.appendChild(this._el);
+                    }
+                    this._originalParent = null;
+                    this._originalNextSibling = null;
                 }
-                this._originalParent = null;
-                this._originalNextSibling = null;
+                this.emit('hidden', { trigger });
+            };
+
+            if (this._animCancel) { this._animCancel(); this._animCancel = null; }
+            this.emit('hide', { opts: merged, trigger });
+            const outAnim = _effectiveAnim(_resolveAnim(merged.animateOut), merged, 'out');
+            if (outAnim) {
+                this._animCancel = _animate(this._el, outAnim, 'out', () => {
+                    this._animCancel = null;
+                    finish();
+                });
+            } else {
+                finish();
             }
-            this.emit('hide', { opts: merged });
             return this;
         }
 
@@ -888,11 +1017,25 @@ const Floater = (() => {
 
     function _closeOnOutside(instance) { instance.close(); }
 
-    function _buildFloaterEl(baseClass, opts) {
-        const el = document.createElement('div');
-        el.className = 'fs-floater ' + baseClass + (opts.className ? ' ' + opts.className : '');
-        if (opts.id) el.id = opts.id;
-        return el;
+    function _buildContent(baseClass) {
+        const content = document.createElement('div');
+        content.className = baseClass;
+        return content;
+    }
+
+    function _wrapContent(content, opts) {
+        content.classList.add('fs-floater-content');
+        if (opts.className) content.classList.add(...opts.className.split(' ').filter(Boolean));
+        const wrapper = document.createElement('div');
+        wrapper.className = 'fs-floater';
+        if (opts.id) wrapper.id = opts.id;
+        wrapper.appendChild(content);
+        if (opts.noContextMenu) wrapper.dataset.fsNoContextMenu = '1';
+        return wrapper;
+    }
+
+    function _content(el) {
+        return el.querySelector('.fs-floater-content');
     }
 
     function _buildDropdownOption(item) {
@@ -922,9 +1065,9 @@ const Floater = (() => {
 
     _types['dropdown'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-dropdown', opts);
-            if (opts.items) for (const item of opts.items) el.appendChild(_buildDropdownOption(item));
-            return el;
+            const content = _buildContent('fs-dropdown');
+            if (opts.items) for (const item of opts.items) content.appendChild(_buildDropdownOption(item));
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -937,8 +1080,9 @@ const Floater = (() => {
         },
         onUpdate(instance, opts) {
             if (!opts.items) return;
-            instance.el.innerHTML = '';
-            for (const item of opts.items) instance.el.appendChild(_buildDropdownOption(item));
+            const content = _content(instance.el);
+            content.innerHTML = '';
+            for (const item of opts.items) content.appendChild(_buildDropdownOption(item));
             _applyMarkers(instance.el, instance.opts);
         },
         onScrollSelect(instance, delta) {
@@ -957,9 +1101,9 @@ const Floater = (() => {
 
     _types['number-picker'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-number-picker', opts);
-            if (opts.presets) for (const v of opts.presets) el.appendChild(_buildPickerPreset(v));
-            return el;
+            const content = _buildContent('fs-number-picker');
+            if (opts.presets) for (const v of opts.presets) content.appendChild(_buildPickerPreset(v));
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -974,8 +1118,9 @@ const Floater = (() => {
         },
         onUpdate(instance, opts) {
             if (!opts.presets) return;
-            instance.el.innerHTML = '';
-            for (const v of opts.presets) instance.el.appendChild(_buildPickerPreset(v));
+            const content = _content(instance.el);
+            content.innerHTML = '';
+            for (const v of opts.presets) content.appendChild(_buildPickerPreset(v));
             _applyMarkers(instance.el, instance.opts);
         },
         onScrollSelect(instance, delta) {
@@ -1004,9 +1149,9 @@ const Floater = (() => {
 
     _types['text-suggestions'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-text-suggestions', opts);
-            if (opts.suggestions) for (const s of opts.suggestions) el.appendChild(_buildSuggestionItem(s));
-            return el;
+            const content = _buildContent('fs-text-suggestions');
+            if (opts.suggestions) for (const s of opts.suggestions) content.appendChild(_buildSuggestionItem(s));
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1019,8 +1164,9 @@ const Floater = (() => {
         },
         onUpdate(instance, opts) {
             if (!opts.suggestions) return;
-            instance.el.innerHTML = '';
-            for (const s of opts.suggestions) instance.el.appendChild(_buildSuggestionItem(s));
+            const content = _content(instance.el);
+            content.innerHTML = '';
+            for (const s of opts.suggestions) content.appendChild(_buildSuggestionItem(s));
             _applyMarkers(instance.el, instance.opts);
         },
         onClickOutside: _closeOnOutside,
@@ -1028,12 +1174,12 @@ const Floater = (() => {
 
     _types['popover'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-popover', opts);
-            if (opts.content != null) el.innerHTML = opts.content;
-            return el;
+            const content = _buildContent('fs-popover');
+            if (opts.content != null) content.innerHTML = opts.content;
+            return content;
         },
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
-        onUpdate(instance, opts) { if (opts.content != null) instance.el.innerHTML = opts.content; },
+        onUpdate(instance, opts) { if (opts.content != null) _content(instance.el).innerHTML = opts.content; },
         onClickOutside: _closeOnOutside,
     };
 
@@ -1049,11 +1195,11 @@ const Floater = (() => {
 
     _types['chips'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-chips', opts);
+            const content = _buildContent('fs-chips');
             const selected = new Set((opts.selectedValues || []).map(String));
             const preferred = new Set((opts.preferenceValues || []).map(String));
-            for (const item of (opts.items || [])) el.appendChild(_buildChip(item, selected, preferred));
-            return el;
+            for (const item of (opts.items || [])) content.appendChild(_buildChip(item, selected, preferred));
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1082,9 +1228,10 @@ const Floater = (() => {
             if (opts.items) {
                 const prev = new Set([...instance.el.querySelectorAll('.fs-chip-selected')].map(c => c.dataset.value));
                 const pref = new Set((opts.preferenceValues || instance.opts.preferenceValues || []).map(String));
-                instance.el.innerHTML = '';
+                const content = _content(instance.el);
+                content.innerHTML = '';
                 for (const item of opts.items) {
-                    instance.el.appendChild(_buildChip(item, prev, pref));
+                    content.appendChild(_buildChip(item, prev, pref));
                 }
             }
         },
@@ -1093,7 +1240,7 @@ const Floater = (() => {
 
     _types['slider'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-slider-panel', opts);
+            const content = _buildContent('fs-slider-panel');
             for (const s of (opts.sliders || [])) {
                 const row = document.createElement('div');
                 row.className = 'fs-slider-row';
@@ -1119,9 +1266,9 @@ const Floater = (() => {
                 input.value = s.value ?? s.min ?? 0;
                 row.appendChild(header);
                 row.appendChild(input);
-                el.appendChild(row);
+                content.appendChild(row);
             }
-            return el;
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1193,6 +1340,7 @@ const Floater = (() => {
                 row.appendChild(lbl);
             }
             const subEl = _types[field.type].build(Object.assign({}, field));
+            subEl.classList.add('fs-floater-content');
             subEl.dataset.fsSubtype = field.type;
             if (field.name) subEl.dataset.fsName = field.name;
             subEl._fsField = field;
@@ -1240,9 +1388,9 @@ const Floater = (() => {
 
     _types['input-group'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-input-group', opts);
-            for (const field of (opts.inputs || [])) el.appendChild(_buildInputRow(field));
-            return el;
+            const content = _buildContent('fs-input-group');
+            for (const field of (opts.inputs || [])) content.appendChild(_buildInputRow(field));
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1454,15 +1602,15 @@ const Floater = (() => {
 
     _types['fetch'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-fetch-panel', opts);
-            el.innerHTML = '<div class="fs-fetch-loading">Loading...</div>';
-            return el;
+            const content = _buildContent('fs-fetch-panel');
+            content.innerHTML = '<div class="fs-fetch-loading">Loading...</div>';
+            return content;
         },
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
         onOpen(instance, anchor, opts) {
             const url = opts.url || instance.opts.url;
             if (!url) return;
-            instance.el.innerHTML = '<div class="fs-fetch-loading">Loading...</div>';
+            _content(instance.el).innerHTML = '<div class="fs-fetch-loading">Loading...</div>';
             const method = opts.fetchMethod || instance.opts.fetchMethod || 'fetch';
             const transform = opts.transform || instance.opts.transform || null;
             const respType = opts.responseType || instance.opts.responseType || 'auto';
@@ -1488,11 +1636,12 @@ const Floater = (() => {
                 el.src = url;
                 if (detectedMedia !== 'image') { el.controls = true; }
                 el.style.maxWidth = '100%';
-                instance.el.innerHTML = '';
+                const content = _content(instance.el);
+                content.innerHTML = '';
                 const wrap = document.createElement('div');
                 wrap.className = 'fs-fetch-content';
                 wrap.appendChild(el);
-                instance.el.appendChild(wrap);
+                content.appendChild(wrap);
                 el.addEventListener('load', _reposition);
                 el.addEventListener('loadedmetadata', _reposition);
                 instance.emit('loaded', { url });
@@ -1517,7 +1666,7 @@ const Floater = (() => {
                 } else {
                     html = `<pre>${text.slice(0, 3000)}</pre>`;
                 }
-                instance.el.innerHTML = `<div class="fs-fetch-content">${html}</div>`;
+                _content(instance.el).innerHTML = `<div class="fs-fetch-content">${html}</div>`;
                 _reposition();
                 const mediaEl = instance.el.querySelector('img,video,audio');
                 if (mediaEl) { mediaEl.addEventListener('load', _reposition); mediaEl.addEventListener('loadedmetadata', _reposition); }
@@ -1526,9 +1675,9 @@ const Floater = (() => {
 
             const handleError = err => {
                 if (!instance.isOpen) return;
-                instance.el.innerHTML = `<div class="fs-fetch-error">Error: ${err.message || String(err)}</div>`;
+                _content(instance.el).innerHTML = `<div class="fs-fetch-error">Error: ${err.message || String(err)}</div>`;
                 _reposition();
-                instance.emit('error', { url, error: err });
+                instance.emit('error', { level: 2, url, error: err });
             };
 
             if (method === 'xhr' || method === 'ajax') {
@@ -1559,13 +1708,13 @@ const Floater = (() => {
 
     _types['audio'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-audio-panel', opts);
+            const content = _buildContent('fs-audio-panel');
             const audio = document.createElement('audio');
             audio.controls = true;
             audio.className = 'fs-audio-el';
             if (opts.src) audio.src = opts.src;
-            el.appendChild(audio);
-            return el;
+            content.appendChild(audio);
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1602,7 +1751,7 @@ const Floater = (() => {
 
     _types['video'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-video-panel', opts);
+            const content = _buildContent('fs-video-panel');
             const video = document.createElement('video');
             video.controls = true;
             video.className = 'fs-video-el';
@@ -1610,8 +1759,8 @@ const Floater = (() => {
             if (opts.poster) video.poster = opts.poster;
             if (opts.muted) video.muted = true;
             if (opts.width) video.style.width = opts.width;
-            el.appendChild(video);
-            return el;
+            content.appendChild(video);
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1649,20 +1798,20 @@ const Floater = (() => {
 
     _types['image'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-image-panel', opts);
+            const content = _buildContent('fs-image-panel');
             const img = document.createElement('img');
             img.className = 'fs-image-el';
             if (opts.src) img.src = opts.src;
             if (opts.alt) img.alt = opts.alt;
             if (opts.width) img.style.maxWidth = opts.width;
-            el.appendChild(img);
+            content.appendChild(img);
             if (opts.caption) {
                 const cap = document.createElement('div');
                 cap.className = 'fs-image-caption';
                 cap.textContent = opts.caption;
-                el.appendChild(cap);
+                content.appendChild(cap);
             }
-            return el;
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1722,9 +1871,9 @@ const Floater = (() => {
         zPriority: 1000,
         closeOthersImmune: true,
         build(opts) {
-            const el = _buildFloaterEl('fs-context-menu', opts);
-            _buildContextMenuItems(el, opts.items || []);
-            return el;
+            const content = _buildContent('fs-context-menu');
+            _buildContextMenuItems(content, opts.items || []);
+            return content;
         },
         onOpen(instance, anchor, merged) {
             if (!('closeOthers' in merged)) merged.closeOthers = false;
@@ -1744,7 +1893,7 @@ const Floater = (() => {
                     if (e.target.closest('[data-fs-no-context-menu]')) return;
                     if (excludeSelectors.some(sel => e.target.closest(sel))) return;
                     e.preventDefault();
-                    instance.open(e);
+                    instance.open(e, { trigger: 'contextmenu' });
                 };
                 document.addEventListener('contextmenu', handler);
                 instance._addCleanup(() => document.removeEventListener('contextmenu', handler));
@@ -1752,30 +1901,31 @@ const Floater = (() => {
         },
         onUpdate(instance, opts) {
             if (!opts.items) return;
-            instance.el.innerHTML = '';
-            _buildContextMenuItems(instance.el, opts.items);
+            const content = _content(instance.el);
+            content.innerHTML = '';
+            _buildContextMenuItems(content, opts.items);
         },
         onClickOutside: _closeOnOutside,
     };
 
     _types['persist'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-persist-panel', opts);
-            if (opts.content != null) el.innerHTML = opts.content;
-            return el;
+            const content = _buildContent('fs-persist-panel');
+            if (opts.content != null) content.innerHTML = opts.content;
+            return content;
         },
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
-        onUpdate(instance, opts) { if (opts.content != null) instance.el.innerHTML = opts.content; },
+        onUpdate(instance, opts) { if (opts.content != null) _content(instance.el).innerHTML = opts.content; },
     };
 
     _types['modal'] = {
         build(opts) {
-            const el = _buildFloaterEl('fs-modal-panel', opts);
-            if (opts.content != null) el.innerHTML = opts.content;
-            return el;
+            const content = _buildContent('fs-modal-panel');
+            if (opts.content != null) content.innerHTML = opts.content;
+            return content;
         },
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
-        onUpdate(instance, opts) { if (opts.content != null) instance.el.innerHTML = opts.content; },
+        onUpdate(instance, opts) { if (opts.content != null) _content(instance.el).innerHTML = opts.content; },
     };
 
     return {
@@ -1783,14 +1933,19 @@ const Floater = (() => {
             _types[name] = Object.assign({}, def);
         },
 
+        registerAnimation(name, def) {
+            _animations[name] = Object.assign({ duration: 150, easing: 'ease' }, def);
+        },
+
         create(id, type, opts) {
             opts = Object.assign({}, _defaults, _typeDefaults[type] || {}, opts || {});
             if (_registry.has(id)) _registry.get(id).destroy();
             const typeDef = _types[type];
             if (!typeDef || !typeDef.build) throw new Error(`FloaterSystem.create: type "${type}" has no build()`);
-            const el = typeDef.build(opts);
+            const content = typeDef.build(opts);
+            if (!(content instanceof Element)) throw new Error(`FloaterSystem.create: type "${type}" build() must return an Element`);
+            const el = _wrapContent(content, opts);
             el.setAttribute('hidden', '');
-            if (opts.noContextMenu) el.dataset.fsNoContextMenu = '1';
             _getContainer().appendChild(el);
             const instance = new FloaterInstance(id, el, type, opts);
             _registry.set(id, instance);
@@ -1798,6 +1953,7 @@ const Floater = (() => {
             if (typeDef.init) typeDef.init(instance, opts);
             if (opts.currentValue != null || opts.preferenceValue != null) _applyMarkers(el, opts);
             if (opts.closeButton) _addCloseButton(instance);
+            instance.emit('create', {});
             const toFrontOn = opts.toFrontOn != null ? opts.toFrontOn : 'click';
             if (toFrontOn === 'click' || toFrontOn === 'hover') {
                 const evt = toFrontOn === 'hover' ? 'mouseenter' : 'click';
@@ -1807,6 +1963,7 @@ const Floater = (() => {
                     if (cont.lastElementChild !== el) cont.appendChild(el);
                     const zBoost = (_types[instance._type] && _types[instance._type].zPriority) || 0;
                     el.style.zIndex = String(++_zCounter + zBoost);
+                    _updateFocusClasses();
                 });
             }
             return instance;
@@ -1816,16 +1973,22 @@ const Floater = (() => {
             const type = (opts || {}).type || 'generic';
             opts = Object.assign({}, _defaults, _typeDefaults[type] || {}, opts || {});
             if (_registry.has(id)) _registry.get(id).destroy();
-            el.classList.add('fs-floater');
-            if (opts.noContextMenu) el.dataset.fsNoContextMenu = '1';
-            const instance = new FloaterInstance(id, el, type, opts);
+            const originalParent = el.parentNode;
+            const nextSibling = el.nextSibling;
+            const wasHidden = el.hasAttribute('hidden');
+            if (wasHidden) el.removeAttribute('hidden');
+            const wrapper = _wrapContent(el, opts);
+            originalParent.insertBefore(wrapper, nextSibling);
+            if (wasHidden) wrapper.setAttribute('hidden', '');
+            const instance = new FloaterInstance(id, wrapper, type, opts);
             instance._attached = true;
             _registry.set(id, instance);
-            el.addEventListener('click', () => _closeOnClickOutside(instance));
+            wrapper.addEventListener('click', () => _closeOnClickOutside(instance));
             const typeDef = _types[type];
             if (typeDef && typeDef.init) typeDef.init(instance, opts);
-            if (opts.currentValue != null || opts.preferenceValue != null) _applyMarkers(el, opts);
+            if (opts.currentValue != null || opts.preferenceValue != null) _applyMarkers(wrapper, opts);
             if (opts.closeButton) _addCloseButton(instance);
+            instance.emit('create', {});
             return instance;
         },
 
@@ -1833,11 +1996,14 @@ const Floater = (() => {
         has(id) { return _registry.has(id); },
         remove(id) { const i = _registry.get(id); if (i) i.destroy(); },
 
+        getAll(filter) { return [..._registry.values()].filter(i => _matchesFilter(i, filter)); },
+        getOpen(filter) { return [..._registry.values()].filter(i => i.isOpen && _matchesFilter(i, filter)); },
+
         closeAll(filter, opts) {
             const includeProtected = opts && opts.includeProtected;
             for (const instance of _registry.values()) {
                 if (!includeProtected && (instance.opts.protected || instance.opts.modal)) continue;
-                if (!filter || filter(instance)) instance.close();
+                if (_matchesFilter(instance, filter)) instance.close();
             }
         },
 
@@ -1866,16 +2032,17 @@ const Floater = (() => {
 
                 const scheduleClose = () => {
                     clearTimeout(timer);
-                    timer = setTimeout(() => { if (instance.isOpen) instance.close(); }, delay);
+                    timer = setTimeout(() => { if (instance.isOpen) instance.close({ trigger: 'hover' }); }, delay);
                 };
                 const cancelClose = () => clearTimeout(timer);
 
                 const onAnchorEnter = () => {
                     cancelClose();
+                    const openOpts = Object.assign({}, opts, { trigger: 'hover' });
                     if (openDelay) {
-                        timer = setTimeout(() => instance.open(anchor, opts), openDelay);
+                        timer = setTimeout(() => instance.open(anchor, openOpts), openDelay);
                     } else {
-                        instance.open(anchor, opts);
+                        instance.open(anchor, openOpts);
                     }
                 };
                 const onAnchorLeave = e => {
@@ -1904,7 +2071,7 @@ const Floater = (() => {
             } else if (trigger === 'click') {
                 const onMouseDown = e => {
                     e.stopPropagation();
-                    instance.toggle(anchor, opts);
+                    instance.toggle(anchor, Object.assign({}, opts, { trigger: 'click' }));
                 };
                 // mousedown toggles but click still bubbles to the document handler and closes immediately; stop it
                 const onClickStop = e => e.stopPropagation();
@@ -1916,18 +2083,20 @@ const Floater = (() => {
                 };
 
             } else if (trigger === 'focus') {
-                const onFocus = () => instance.open(anchor, opts);
+                const onFocus = () => {
+                    instance.open(anchor, Object.assign({}, opts, { trigger: 'focus' }));
+                };
                 // If focus moved into the floater (e.g. a spinner input/button), don't close - onFloaterFocusOut handles that case
                 const onBlur = e => {
                     if (instance.el.contains(e.relatedTarget)) return;
-                    instance.close();
+                    instance.close({ trigger: 'focus' });
                 };
                 // preventDefault stops a click on a non-focusable element inside the floater from blurring the anchor
                 const onFloaterMouseDown = e => e.preventDefault();
                 // Close when focus leaves the floater to somewhere outside both the floater and the anchor
                 const onFloaterFocusOut = e => {
                     if (e.relatedTarget === anchor || instance.el.contains(e.relatedTarget)) return;
-                    instance.close();
+                    instance.close({ trigger: 'focus' });
                 };
                 // click on anchor still bubbles to document handler after focus fires; stop it
                 const onClickStop = e => e.stopPropagation();
@@ -1949,7 +2118,7 @@ const Floater = (() => {
             } else if (trigger === 'contextmenu') {
                 const onContextMenu = e => {
                     e.preventDefault();
-                    instance.open(e, opts);
+                    instance.open(e, Object.assign({}, opts, { trigger: 'contextmenu' }));
                 };
                 anchor.addEventListener('contextmenu', onContextMenu);
                 cleanup = () => anchor.removeEventListener('contextmenu', onContextMenu);
@@ -1974,7 +2143,7 @@ const Floater = (() => {
                     if (e.button !== undefined && e.button !== 0) return;
                     e.preventDefault();
                     active = true;
-                    instance.open(anchor, opts);
+                    instance.open(anchor, Object.assign({}, opts, { trigger: 'press' }));
                     const pt = e.touches ? e.touches[0] : e;
                     setHovered(getTarget(pt.clientX, pt.clientY));
                 };
@@ -2042,6 +2211,18 @@ const Floater = (() => {
             } else {
                 Object.assign(_defaults, typeOrOpts);
             }
+        },
+
+        on(event, fn) {
+            if (!_globalHandlers[event]) _globalHandlers[event] = [];
+            _globalHandlers[event].push(fn);
+            return this;
+        },
+
+        off(event, fn) {
+            if (!_globalHandlers[event]) return this;
+            _globalHandlers[event] = _globalHandlers[event].filter(h => h !== fn);
+            return this;
         },
 
         logger(fn, filter) {

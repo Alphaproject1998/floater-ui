@@ -244,6 +244,32 @@
             vertical-align: middle;
             flex-shrink: 0;
         }
+
+        /* Custom registerAnimation() example - the library only needs class names, the CSS is ours */
+        .demo-anim-flip {
+            opacity: 0;
+            transform: perspective(600px) rotateX(-90deg);
+        }
+
+        /* Nicer content for the animation demo popovers */
+        .anim-card {
+            padding: 14px 16px;
+            min-width: 150px;
+        }
+        .anim-card-icon {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+        .anim-card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+        .anim-card-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -251,7 +277,7 @@
 <div id="ctx-val-display" style="position:fixed;bottom:32px;right:96px;z-index:600;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 8px;pointer-events:none;display:none;">ctx: —</div>
 
 <h1>Floater - Full Demo</h1>
-<p class="page-sub">17 built-in types (dropdown, number-picker, text-suggestions, popover, chips, slider, input-group, date, time, datetime, fetch, audio, video, image, persist, modal, context-menu) - create() and attach() modes - markers - events - dynamic update/destroy - custom types - viewport edge cases - hover/programmatic triggers - scroll behaviour - fitContent - blockScroll / blockClicks - press trigger - scrollSelect</p>
+<p class="page-sub">17 built-in types (dropdown, number-picker, text-suggestions, popover, chips, slider, input-group, date, time, datetime, fetch, audio, video, image, persist, modal, context-menu) - create() and attach() modes - markers - events - animations - dynamic update/destroy - custom types - viewport edge cases - hover/programmatic triggers - scroll behaviour - fitContent - blockScroll / blockClicks - press trigger - scrollSelect - getAll() / getOpen()</p>
 <p class="page-sub" style="margin-top:4px;color:rgba(255,255,255,0.2);">Arrow ▶ only rotates when <code style="font-size:11px;color:rgba(200,200,255,0.5);">arrowEl</code> is wired - demos that have it wired are marked with ↕</p>
 
 <!-- ═══ 1. Dropdown ══════════════════════════════════════════════════════ -->
@@ -641,7 +667,7 @@
         <div class="card">
             <div class="card-label">Arbitrary custom markup</div>
             <button class="btn" id="att-custom-btn">Open snippet <span class="arrow">▶</span></button>
-            <div id="att-custom-el" class="fs-floater" hidden style="padding:14px;min-width:210px;">
+            <div id="att-custom-el" hidden style="padding:14px;min-width:210px;">
                 <p style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px;">Custom attached element</p>
                 <p style="font-size:13px;">Any markup goes here - attach() wraps it with Floater positioning and scroll-close behaviour.</p>
             </div>
@@ -1182,9 +1208,81 @@
 
 <hr>
 
-<!-- ═══ 23. Events log ══════════════════════════════════════════════════ -->
+<!-- ═══ 23. Animations ═══════════════════════════════════════════════════ -->
 <div class="section">
-    <h2>23. Events - all instances</h2>
+    <h2>23. Animations</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;"><code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">animateIn</code> / <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">animateOut</code> presets, a custom <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">registerAnimation()</code>, and switching a floater's animation on demand via <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">update()</code>.</p>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">animateIn/Out: 'fade'</div>
+            <button class="btn" id="anim-fade-btn">Fade</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">animateIn/Out: 'scale'</div>
+            <button class="btn" id="anim-scale-btn">Scale</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">animateIn: 'slide-down', animateOut: 'slide-up'</div>
+            <button class="btn" id="anim-slide-btn">Slide</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Floater.registerAnimation('flip', {...}) - custom animation, own CSS classes registered by the page</div>
+            <button class="btn" id="anim-flip-btn">Flip</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">instance.update({ animateIn, animateOut, animateInDuration, animateOutDuration }) - switch a floater's in/out animation and per-direction durations on demand, no recreate</div>
+            <button class="btn" id="anim-switch-in-btn">In animation <span class="arrow" id="anim-switch-in-arrow">▶</span></button>
+            <button class="btn" id="anim-switch-in-dur-btn">In duration <span class="arrow">▶</span></button>
+            <button class="btn" id="anim-switch-out-btn">Out animation <span class="arrow" id="anim-switch-out-arrow">▶</span></button>
+            <button class="btn" id="anim-switch-out-dur-btn">Out duration <span class="arrow">▶</span></button>
+            <div class="out" id="anim-switch-out">-</div>
+            <button class="btn" id="anim-switch-btn">Open</button>
+        </div>
+
+    </div>
+</div>
+
+<hr>
+
+<!-- ═══ 24. Event hooks ══════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>24. Event hooks</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;"><code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">Floater.on()</code> observing every instance globally, custom events via <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">emit()</code>, and querying open floaters.</p>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Floater.on() - global counts across every basic event, every floater on this page (since page load)</div>
+            <div class="out" id="global-hook-out">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">instance.emit('ping') - instance.on() only sees the instance it's attached to; Floater.on() sees every instance</div>
+            <button class="btn" id="custom-emit-a-btn">Ping fade-popover (has instance.on())</button>
+            <button class="btn" id="custom-emit-b-btn">Ping scale-popover (no instance listener)</button>
+            <div class="out" id="custom-emit-out" style="text-align:left;font-family:monospace;">-</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Floater.getOpen(filter) - query open floaters by type / id prefix</div>
+            <button class="btn" id="query-all-btn">All open</button>
+            <button class="btn" id="query-type-btn">type: 'popover'</button>
+            <button class="btn" id="query-prefix-btn">idPrefix: 'anim-'</button>
+            <div class="out" id="query-out">-</div>
+        </div>
+
+    </div>
+</div>
+
+<hr>
+
+<!-- ═══ 25. Events log ══════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>25. Events - all instances</h2>
     <div class="log-bar">
         <button class="btn" id="log-clear">Clear</button>
         <label><input type="checkbox" id="log-verbose" checked> Verbose data</label>
@@ -1216,7 +1314,7 @@
         if (logEl.children.length > 150) logEl.removeChild(logEl.lastChild);
     }
 
-    const LOG_EVENTS = new Set(['show', 'hide', 'change', 'input', 'update', 'destroy']);
+    const LOG_EVENTS = new Set(['create', 'trigger', 'show', 'shown', 'hide', 'hidden', 'change', 'input', 'update', 'destroy', 'ping']);
     Floater.logger((level, msg, data) => {
         const sep = msg.indexOf(':');
         const id = msg.slice(0, sep);
@@ -1225,6 +1323,18 @@
     }, 'event');
 
     document.getElementById('log-clear').onclick = () => { logEl.innerHTML = ''; };
+
+    // ── Global event hook counters (section 23's card) ──────────────────────
+    // Registered before any floater on the page is created, so 'create' counts everything.
+    const globalHookOut = document.getElementById('global-hook-out');
+    const globalHookCounts = { create: 0, trigger: 0, show: 0, shown: 0, hide: 0, hidden: 0, update: 0, destroy: 0 };
+    const renderGlobalHookOut = () => {
+        globalHookOut.textContent = Object.entries(globalHookCounts).map(([event, n]) => `${event}: ${n}`).join(' · ');
+    };
+    for (const event of Object.keys(globalHookCounts)) {
+        Floater.on(event, () => { globalHookCounts[event]++; renderGlobalHookOut(); });
+    }
+    renderGlobalHookOut();
 
     // ── 1. Dropdown ────────────────────────────────────────────────────────
 
@@ -1823,19 +1933,17 @@
 
     Floater.registerType('color-palette', {
         build(opts) {
-            const el = document.createElement('div');
-            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
-            if (opts.id) el.id = opts.id;
-            el.style.cssText = 'display:grid;grid-template-columns:repeat(6,28px);gap:4px;padding:10px;';
+            const content = document.createElement('div');
+            content.style.cssText = 'display:grid;grid-template-columns:repeat(6,28px);gap:4px;padding:10px;';
             for (const color of (opts.colors || [])) {
                 const sw = document.createElement('button');
                 sw.type = 'button';
                 sw.title = color;
                 sw.dataset.color = color;
                 sw.style.cssText = `width:28px;height:28px;border-radius:4px;background:${color};border:2px solid ${color === opts.currentValue ? 'white' : 'transparent'};cursor:pointer;transition:border-color 0.1s;padding:0;`;
-                el.appendChild(sw);
+                content.appendChild(sw);
             }
-            return el;
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -1877,10 +1985,8 @@
 
     Floater.registerType('star-rating', {
         build(opts) {
-            const el = document.createElement('div');
-            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
-            if (opts.id) el.id = opts.id;
-            el.style.cssText = 'display:flex;gap:2px;padding:10px;';
+            const content = document.createElement('div');
+            content.style.cssText = 'display:flex;gap:2px;padding:10px;';
             const cur = opts.value || 0;
             const max = opts.max || 5;
             for (let i = 1; i <= max; i++) {
@@ -1889,9 +1995,9 @@
                 star.dataset.rating = i;
                 star.textContent = '★';
                 star.style.cssText = `font-size:30px;background:none;border:none;cursor:pointer;color:${i <= cur ? '#ffcc00' : 'rgba(255,255,255,0.18)'};transition:color 0.1s;padding:0 2px;line-height:1;`;
-                el.appendChild(star);
+                content.appendChild(star);
             }
-            return el;
+            return content;
         },
         init(instance) {
             const highlight = n => {
@@ -1927,11 +2033,9 @@
 
     Floater.registerType('emoji-picker', {
         build(opts) {
-            const el = document.createElement('div');
-            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
-            if (opts.id) el.id = opts.id;
+            const content = document.createElement('div');
             const cols = opts.columns || 6;
-            el.style.cssText = `display:grid;grid-template-columns:repeat(${cols},1fr);gap:2px;padding:8px;`;
+            content.style.cssText = `display:grid;grid-template-columns:repeat(${cols},1fr);gap:2px;padding:8px;`;
             for (const emoji of (opts.emojis || [])) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
@@ -1941,9 +2045,9 @@
                 btn.style.cssText = 'font-size:22px;background:none;border:none;cursor:pointer;padding:3px;border-radius:4px;transition:background 0.1s;line-height:1;';
                 btn.addEventListener('mouseover', () => { btn.style.background = 'rgba(255,255,255,0.1)'; });
                 btn.addEventListener('mouseout', () => { btn.style.background = 'none'; });
-                el.appendChild(btn);
+                content.appendChild(btn);
             }
-            return el;
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -2243,6 +2347,7 @@
     const modalF = Floater.create('modal-f', 'modal', {
         modal: true,
         protected: true,
+        fitContent: true,
         content: (() => {
             return `<div style="padding:20px;min-width:260px;max-width:320px;">
                 <p style="font-size:14px;font-weight:500;margin-bottom:8px;">Confirm action</p>
@@ -2390,17 +2495,16 @@
 
     Floater.registerType('confirm-dialog', {
         build(opts) {
-            const el = document.createElement('div');
-            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
-            el.style.cssText = 'padding:14px;min-width:220px;';
-            el.innerHTML = `
+            const content = document.createElement('div');
+            content.style.cssText = 'padding:14px;min-width:220px;';
+            content.innerHTML = `
                 <p style="font-size:13px;font-weight:500;margin-bottom:6px;">${opts.title || 'Are you sure?'}</p>
                 <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:14px;">${opts.message || ''}</p>
                 <div style="display:flex;gap:8px;justify-content:flex-end;">
                     <button class="btn" data-action="cancel" style="font-size:12px;">${opts.cancelLabel || 'Cancel'}</button>
                     <button class="btn btn-red" data-action="confirm" style="font-size:12px;">${opts.confirmLabel || 'Delete'}</button>
                 </div>`;
-            return el;
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -2451,21 +2555,20 @@
     });
     document.getElementById('ctx-btn').addEventListener('click', function(e) {
         e.stopPropagation();
-        ctxMenu.open(e);
+        ctxMenu.open(e, { trigger: 'click' });
     });
 
     Floater.registerType('progress-panel', {
         build(opts) {
-            const el = document.createElement('div');
-            el.className = 'fs-floater' + (opts.className ? ' ' + opts.className : '');
-            el.style.cssText = 'padding:14px;min-width:220px;';
-            el.innerHTML = `
+            const content = document.createElement('div');
+            content.style.cssText = 'padding:14px;min-width:220px;';
+            content.innerHTML = `
                 <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:8px;" data-label>${opts.label || 'Processing...'}</div>
                 <div style="background:rgba(255,255,255,0.1);border-radius:3px;height:6px;overflow:hidden;">
                     <div data-bar style="height:100%;background:rgba(80,160,255,0.8);width:${opts.progress || 0}%;transition:width 0.3s;"></div>
                 </div>
                 <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;text-align:right;" data-pct>${opts.progress || 0}%</div>`;
-            return el;
+            return content;
         },
         init(instance) {
             instance.el.addEventListener('click', e => e.stopPropagation());
@@ -2767,6 +2870,119 @@
         document.getElementById('scroll-dt-full-out').innerHTML = `<span>${value}</span>`;
     });
     Floater.bind(scrollDtFullInp, scrollDtFullF, { trigger: 'focus', scrollSelect: true });
+
+    // ── 23. Animations ───────────────────────────────────────────────────────
+
+    const animCard = (icon, title, sub) => `<div class="anim-card">
+        <div class="anim-card-icon">${icon}</div>
+        <div class="anim-card-title">${title}</div>
+        <div class="anim-card-sub">${sub}</div>
+    </div>`;
+
+    const animFadeF = Floater.create('anim-fade-f', 'popover', {
+        content: animCard('🌫️', 'Fade', 'Opacity in, opacity out'),
+        animateIn: 'fade', animateOut: 'fade',
+    });
+    Floater.bind(document.getElementById('anim-fade-btn'), animFadeF, { trigger: 'click' });
+
+    const animScaleF = Floater.create('anim-scale-f', 'popover', {
+        content: animCard('🔍', 'Scale', 'Grows in, shrinks out'),
+        animateIn: 'scale', animateOut: 'scale',
+    });
+    Floater.bind(document.getElementById('anim-scale-btn'), animScaleF, { trigger: 'click' });
+
+    const animSlideF = Floater.create('anim-slide-f', 'popover', {
+        content: animCard('↕️', 'Slide', 'Down in, up out'),
+        animateIn: 'slide-down', animateOut: 'slide-up',
+    });
+    Floater.bind(document.getElementById('anim-slide-btn'), animSlideF, { trigger: 'click' });
+
+    // registerAnimation() - a custom animation is just a class name pair the page owns; the library
+    // only applies/removes the classes and waits for transitionend, it doesn't care what's in them
+    Floater.registerAnimation('flip', {
+        inClass: 'demo-anim-flip', outClass: 'demo-anim-flip',
+        duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)',
+    });
+    const animFlipF = Floater.create('anim-flip-f', 'popover', {
+        content: animCard('🔄', 'Flip', 'Custom registerAnimation()'),
+        animateIn: 'flip', animateOut: 'flip',
+    });
+    Floater.bind(document.getElementById('anim-flip-btn'), animFlipF, { trigger: 'click' });
+
+    // update({ animateIn, animateOut, animateInDuration, animateOutDuration }) - swap a floater's
+    // animation and per-direction duration on demand, no recreate needed. The pickers for all four
+    // are floaters themselves (dropdown / number-picker) - no native <select> or <input type="number">.
+    const animSwitchF = Floater.create('anim-switch-f', 'popover', {
+        content: animCard('🎛️', 'Switchable', 'Pick in/out + durations, then open'),
+        animateIn: 'fade', animateOut: 'fade',
+        animateInDuration: 150, animateOutDuration: 150,
+    });
+    Floater.bind(document.getElementById('anim-switch-btn'), animSwitchF, { trigger: 'click' });
+
+    const ANIM_DURATIONS = [100, 150, 200, 300, 500, 800, 1200];
+    const animSwitchOut = document.getElementById('anim-switch-out');
+    const renderAnimSwitchOut = () => {
+        const opts = animSwitchF.opts;
+        animSwitchOut.textContent = `in: ${opts.animateIn || 'none'} (${opts.animateInDuration}ms) · out: ${opts.animateOut || 'none'} (${opts.animateOutDuration}ms)`;
+    };
+    renderAnimSwitchOut();
+
+    const animSwitchInDD = Floater.create('anim-switch-in-dd', 'dropdown', {
+        items: ['fade', 'scale', 'slide-down', 'slide-left', 'flip'].map(v => ({ value: v, label: v })),
+        currentValue: 'fade',
+    });
+    animSwitchInDD.on('change', ({ value }) => { animSwitchF.update({ animateIn: value }); renderAnimSwitchOut(); });
+    Floater.bind(document.getElementById('anim-switch-in-btn'), animSwitchInDD, { trigger: 'click', arrowEl: document.getElementById('anim-switch-in-arrow') });
+
+    const animSwitchOutDD = Floater.create('anim-switch-out-dd', 'dropdown', {
+        items: ['fade', 'scale', 'slide-up', 'slide-right', 'flip'].map(v => ({ value: v, label: v })),
+        currentValue: 'fade',
+    });
+    animSwitchOutDD.on('change', ({ value }) => { animSwitchF.update({ animateOut: value }); renderAnimSwitchOut(); });
+    Floater.bind(document.getElementById('anim-switch-out-btn'), animSwitchOutDD, { trigger: 'click', arrowEl: document.getElementById('anim-switch-out-arrow') });
+
+    const animSwitchInDurNP = Floater.create('anim-switch-in-dur', 'number-picker', {
+        presets: ANIM_DURATIONS, currentValue: '150',
+    });
+    animSwitchInDurNP.on('change', ({ value }) => {
+        animSwitchInDurNP.update({ currentValue: value });
+        animSwitchF.update({ animateInDuration: Number(value) });
+        renderAnimSwitchOut();
+    });
+    Floater.bind(document.getElementById('anim-switch-in-dur-btn'), animSwitchInDurNP, { trigger: 'click' });
+
+    const animSwitchOutDurNP = Floater.create('anim-switch-out-dur', 'number-picker', {
+        presets: ANIM_DURATIONS, currentValue: '150',
+    });
+    animSwitchOutDurNP.on('change', ({ value }) => {
+        animSwitchOutDurNP.update({ currentValue: value });
+        animSwitchF.update({ animateOutDuration: Number(value) });
+        renderAnimSwitchOut();
+    });
+    Floater.bind(document.getElementById('anim-switch-out-dur-btn'), animSwitchOutDurNP, { trigger: 'click' });
+
+    // instance.emit() for a custom event - instance.on() only fires for the instance it's attached to,
+    // Floater.on() fires for every instance's emit() regardless. Logged as a trail (not just counts)
+    // so it's visible which listener actually ran for each press.
+    const customEmitOut = document.getElementById('custom-emit-out');
+    const customEmitLog = [];
+    const renderCustomEmitOut = () => {
+        customEmitOut.innerHTML = customEmitLog.slice(-6).reverse().join('<br>') || '-';
+    };
+    animFadeF.on('ping', () => { customEmitLog.push('fade-popover: instance.on() fired'); renderCustomEmitOut(); });
+    Floater.on('ping', instance => { customEmitLog.push(`${instance.id}: global Floater.on() fired`); renderCustomEmitOut(); });
+    document.getElementById('custom-emit-a-btn').onclick = () => animFadeF.emit('ping', { note: 'ping from fade popover' });
+    document.getElementById('custom-emit-b-btn').onclick = () => animScaleF.emit('ping', { note: 'ping from scale popover' });
+
+    // Floater.getOpen(filter) - query the open floaters on the page
+    const queryOut = document.getElementById('query-out');
+    const renderQuery = filter => {
+        const ids = Floater.getOpen(filter).map(i => i.id);
+        queryOut.textContent = ids.length ? ids.join(', ') : '(none open)';
+    };
+    document.getElementById('query-all-btn').onclick = () => renderQuery();
+    document.getElementById('query-type-btn').onclick = () => renderQuery({ type: 'popover' });
+    document.getElementById('query-prefix-btn').onclick = () => renderQuery({ idPrefix: 'anim-' });
 
     // ── 18. setDefaults() ─────────────────────────────────────────────────
     // These calls are last so all earlier demo floaters are unaffected.

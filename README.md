@@ -17,7 +17,7 @@ npm install floater-ui
 
 **CDN**
 ```html
-<script src="https://unpkg.com/floater-ui@0.1.0/floater.js"></script>
+<script src="https://unpkg.com/floater-ui@0.2.0/floater.js"></script>
 ```
 
 **Manual** - download `floater.js` and include it directly:
@@ -257,12 +257,13 @@ These can be passed to `create()`, `attach()`, `open()`, or `toggle()`.
 
 ```js
 Floater.registerType('my-type', {
-    // Required: build the floater element and return it
+    // Required: build and return the floater's content. The outer .fs-floater
+    // wrapper (id, className, hidden, noContextMenu) is handled by the system -
+    // don't create it yourself.
     build(opts) {
-        const el = document.createElement('div');
-        el.className = 'fs-floater';
-        el.textContent = opts.message || '';
-        return el;
+        const content = document.createElement('div');
+        content.textContent = opts.message || '';
+        return content;
     },
 
     // Optional: called after the instance is created

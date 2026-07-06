@@ -1,6 +1,6 @@
 {
     "name": "floater-ui",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Floating UI elements for the browser - dropdowns, popovers, tooltips, context menus, modals and more. No dependencies.",
     "main": "floater.js",
     "unpkg": "floater.js",
