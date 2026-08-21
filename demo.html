@@ -199,6 +199,15 @@
         .le .ld {
             color: rgba(160,255,160,0.65);
         }
+        .le .lw {
+            color: rgba(255,170,60,0.95);
+        }
+        .le .lx {
+            color: rgba(255,110,110,0.95);
+        }
+        .le .ln {
+            color: rgba(120,180,255,0.8);
+        }
 
         /* Viewport edge buttons */
         .edge-btn {
@@ -277,7 +286,7 @@
 <div id="ctx-val-display" style="position:fixed;bottom:32px;right:96px;z-index:600;font-size:11px;font-family:monospace;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 8px;pointer-events:none;display:none;">ctx: —</div>
 
 <h1>Floater - Full Demo</h1>
-<p class="page-sub">17 built-in types (dropdown, number-picker, text-suggestions, popover, chips, slider, input-group, date, time, datetime, fetch, audio, video, image, persist, modal, context-menu) - create() and attach() modes - markers - events - animations - dynamic update/destroy - custom types - viewport edge cases - hover/programmatic triggers - scroll behaviour - fitContent - blockScroll / blockClicks - press trigger - scrollSelect - getAll() / getOpen()</p>
+<p class="page-sub">17 built-in types (dropdown, number-picker, text-suggestions, popover, chips, slider, input-group, date, time, datetime, fetch, audio, video, image, persist, modal, context-menu) - create() and attach() modes - markers - events - animations - dynamic update/destroy - custom types - viewport edge cases - hover/programmatic triggers - scroll behaviour - fitContent - blockScroll / blockClicks - press trigger - scrollSelect - getAll() / getOpen() - open-time opts - keyboard triggers - Escape stacking - attach/destroy unwrap - warnings &amp; errors in the log</p>
 <p class="page-sub" style="margin-top:4px;color:rgba(255,255,255,0.2);">Arrow ▶ only rotates when <code style="font-size:11px;color:rgba(200,200,255,0.5);">arrowEl</code> is wired - demos that have it wired are marked with ↕</p>
 
 <!-- ═══ 1. Dropdown ══════════════════════════════════════════════════════ -->
@@ -316,7 +325,7 @@
         </div>
 
         <div class="card">
-            <div class="card-label">Dynamic item update</div>
+            <div class="card-label">Dynamic item update - markers reapplied after rebuild</div>
             <button class="btn" id="dd-upd-btn">Category <span class="arrow" id="dd-upd-arrow">▶</span></button>
             <div class="btn-row">
                 <button class="btn btn-blue" id="dd-upd-a">Set A</button>
@@ -727,9 +736,24 @@
         </div>
 
         <div class="card">
+            <div class="card-label">trigger: 'click' from the keyboard - Tab to the button, then Enter or Space</div>
+            <button class="btn" id="kbd-trig-btn">Tab here, press Enter <span class="arrow" id="kbd-trig-arrow">▶</span></button>
+            <div class="out" id="kbd-trig-out">—</div>
+        </div>
+
+        <div class="card">
             <div class="card-label">trigger: 'focus' - input focus opens floater</div>
             <input class="test-input" id="focus-trig-inp" type="text" placeholder="Focus me…" style="width:160px;">
             <div class="out" id="focus-trig-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Open-time opts - one instance, open() decides plain vs modal</div>
+            <div class="btn-row">
+                <button class="btn" id="oto-plain-btn">Open plain</button>
+                <button class="btn btn-blue" id="oto-modal-btn">Open as modal</button>
+            </div>
+            <div class="out" id="oto-out">—</div>
         </div>
 
     </div>
@@ -830,6 +854,17 @@
                 <button class="btn" id="api-get">get state</button>
             </div>
             <div class="out multi" id="api-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">attach() lifecycle - close puts the element back visible, destroy() unwraps it into the page</div>
+            <div id="att-life-el" style="padding:6px 10px;border:1px dashed rgba(255,255,255,0.2);border-radius:4px;font-size:12px;color:rgba(255,255,255,0.5);">I live inline in this card</div>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="att-life-attach">Attach</button>
+                <button class="btn" id="att-life-open">Open</button>
+                <button class="btn btn-red" id="att-life-destroy">Destroy</button>
+            </div>
+            <div class="out" id="att-life-out">not attached</div>
         </div>
 
     </div>
@@ -955,23 +990,23 @@
 
 <!-- ═══ 16. Modal - blocks UI until interacted with ═════════════════════ -->
 <div class="section">
-    <h2>16. Modal - backdrop blocks page, must be explicitly dismissed</h2>
+    <h2>16. Modal - backdrop blocks page; Esc closes the topmost non-protected modal</h2>
     <div class="demo-row">
 
         <div class="card">
-            <div class="card-label">modal: true + protected: true - backdrop click does nothing (protected)</div>
+            <div class="card-label">modal: true + protected: true - backdrop click and Esc do nothing (protected)</div>
             <button class="btn btn-red" id="modal-btn" style="min-width:120px;">Open modal</button>
             <div class="out" id="modal-out">—</div>
         </div>
 
         <div class="card">
-            <div class="card-label">blockScroll: true - locks page scroll; backdrop click closes</div>
+            <div class="card-label">blockScroll: true - locks page scroll; backdrop click or Esc closes</div>
             <button class="btn" id="modal-scroll-btn">Open (blocks scroll)</button>
             <div class="out" id="modal-scroll-out">—</div>
         </div>
 
         <div class="card">
-            <div class="card-label">blockClicks: true - backdrop absorbs clicks, won't close on click</div>
+            <div class="card-label">blockClicks: true - backdrop absorbs clicks; Esc blocked too - own UI only</div>
             <button class="btn" id="modal-backdrop-btn">Open (clicks blocked)</button>
             <div class="out" id="modal-backdrop-out">—</div>
         </div>
@@ -1084,7 +1119,7 @@
 <!-- ═══ 20. toFrontOn - z-index stacking ════════════════════════════════ -->
 <div class="section">
     <h2>20. toFrontOn - z-index stacking</h2>
-    <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">All three open on the same anchor with <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOthers: false</code> so they overlap. Each has a different size. Click/hover inside each to test bring-to-front behaviour.</p>
+    <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">All three open on the same anchor with <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOthers: false</code> so they overlap. Each has a different size. Click/hover inside each to test bring-to-front behaviour. Pressing Esc closes the topmost (highest z-index) first, not the oldest.</p>
     <div class="demo-row">
 
         <div class="card">
@@ -1203,6 +1238,12 @@
             <div class="out" id="scroll-dt-full-out">—</div>
         </div>
 
+        <div class="card">
+            <div class="card-label">datetime step: 15 - seconds column appears; each col scrolls its own unit incl. seconds</div>
+            <input type="text" class="test-input" id="scroll-dt-sec-inp" placeholder="YYYY-MM-DDTHH:MM:SS" style="width:195px;">
+            <div class="out" id="scroll-dt-sec-out">—</div>
+        </div>
+
     </div>
 </div>
 
@@ -1280,9 +1321,47 @@
 
 <hr>
 
-<!-- ═══ 25. Events log ══════════════════════════════════════════════════ -->
+<!-- ═══ 25. Warnings & errors ═══════════════════════════════════════════ -->
 <div class="section">
-    <h2>25. Events - all instances</h2>
+    <h2>25. Warnings &amp; errors - misuse is logged, not silent</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;">API misuse and crashed handlers go to the browser console with a <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">[Floater]</code> prefix, and to <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">Floater.logger()</code> as warn/error levels - both appear in the log below.</p>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Unknown animation preset - warns once, opens without animation</div>
+            <button class="btn" id="diag-anim-btn">Open with animateIn: 'mega-zoom'</button>
+            <div class="out" id="diag-anim-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">bind() misuse - empty selector / unknown trigger</div>
+            <div class="btn-row">
+                <button class="btn" id="diag-bind-btn">bind('#does-not-exist')</button>
+                <button class="btn" id="diag-trigger-btn">trigger: 'dblclick'</button>
+            </div>
+            <div class="out" id="diag-bind-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Throwing event handler - logged, later handlers still run</div>
+            <button class="btn" id="diag-throw-btn">Open &amp; pick <span class="arrow">▶</span></button>
+            <div class="out" id="diag-throw-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">fetch with no url - shows "No URL set" instead of loading forever</div>
+            <button class="btn" id="diag-fetch-btn">Open url-less fetch</button>
+            <div class="out" id="diag-fetch-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<hr>
+
+<!-- ═══ 26. Events log ══════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>26. Events - all instances, plus warnings &amp; errors</h2>
     <div class="log-bar">
         <button class="btn" id="log-clear">Clear</button>
         <label><input type="checkbox" id="log-verbose" checked> Verbose data</label>
@@ -1300,31 +1379,43 @@
     const logEl = document.getElementById('EventLog');
     const logVerbose = document.getElementById('log-verbose');
 
+    const escLog = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    function addLogLine(html) {
+        const div = document.createElement('div');
+        div.className = 'le';
+        div.innerHTML = html;
+        logEl.insertBefore(div, logEl.firstChild);
+        if (logEl.children.length > 150) logEl.removeChild(logEl.lastChild);
+    }
+
     function logEvent(id, event, data) {
         const time = new Date().toTimeString().slice(0, 8);
         const raw = logVerbose.checked && data && Object.keys(data).length
             ? JSON.stringify(data, (k, v) => v instanceof Element ? `<${v.tagName.toLowerCase()}>` : v)
             : '';
-        // Escape so JSON containing e.g. <button> doesn't get parsed as HTML
-        const dataStr = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const div = document.createElement('div');
-        div.className = 'le';
-        div.innerHTML = `<span class="lt">${time}</span> <span class="li">${id}</span> <span class="lv">${event}</span>${dataStr ? ' <span class="ld">' + dataStr + '</span>' : ''}`;
-        logEl.insertBefore(div, logEl.firstChild);
-        if (logEl.children.length > 150) logEl.removeChild(logEl.lastChild);
+        const dataStr = escLog(raw);
+        addLogLine(`<span class="lt">${time}</span> <span class="li">${id}</span> <span class="lv">${event}</span>${dataStr ? ' <span class="ld">' + dataStr + '</span>' : ''}`);
     }
 
     const LOG_EVENTS = new Set(['create', 'trigger', 'show', 'shown', 'hide', 'hidden', 'change', 'input', 'update', 'destroy', 'ping']);
     Floater.logger((level, msg, data) => {
-        const sep = msg.indexOf(':');
-        const id = msg.slice(0, sep);
-        const event = msg.slice(sep + 1);
-        if (LOG_EVENTS.has(event)) logEvent(id, event, data.data);
-    }, 'event');
+        if (level === 'event') {
+            const sep = msg.indexOf(':');
+            const id = msg.slice(0, sep);
+            const event = msg.slice(sep + 1);
+            if (LOG_EVENTS.has(event)) logEvent(id, event, data.data);
+            return;
+        }
+        const time = new Date().toTimeString().slice(0, 8);
+        const cls = level === 'error' ? 'lx' : level === 'warn' ? 'lw' : 'ln';
+        const detail = data instanceof Error ? escLog(data.message) : '';
+        addLogLine(`<span class="lt">${time}</span> <span class="${cls}">${level}</span> ${escLog(msg)}${detail ? ' <span class="ld">' + detail + '</span>' : ''}`);
+    });
 
     document.getElementById('log-clear').onclick = () => { logEl.innerHTML = ''; };
 
-    // ── Global event hook counters (section 23's card) ──────────────────────
+    // ── Global event hook counters (section 24's card) ──────────────────────
     // Registered before any floater on the page is created, so 'create' counts everything.
     const globalHookOut = document.getElementById('global-hook-out');
     const globalHookCounts = { create: 0, trigger: 0, show: 0, shown: 0, hide: 0, hidden: 0, update: 0, destroy: 0 };
@@ -1414,9 +1505,11 @@
 
     const ddUpd = Floater.create('dd-upd', 'dropdown', {
         items: [{ value: 'a1', label: 'Alpha' }, { value: 'a2', label: 'Beta' }, { value: 'a3', label: 'Gamma' }],
+        currentValue: 'a2',
     });
-    ddUpd.on('change', ({ label }) => {
+    ddUpd.on('change', ({ label, value }) => {
         document.getElementById('dd-upd-out').innerHTML = `<span>${label}</span>`;
+        ddUpd.update({ currentValue: value });
     });
     Floater.bind(document.getElementById('dd-upd-btn'), ddUpd, { trigger: 'click', arrowEl: document.getElementById('dd-upd-arrow') });
     document.getElementById('dd-upd-a').onclick = () => ddUpd.update({
@@ -1929,6 +2022,28 @@
     focusTrigF.on('change', ({ value }) => { document.getElementById('focus-trig-out').innerHTML = `<span>${value}</span>`; });
     Floater.bind(document.getElementById('focus-trig-inp'), focusTrigF, { trigger: 'focus' });
 
+    const kbdTrigF = Floater.create('kbd-trig', 'dropdown', {
+        items: ['Opened with the keyboard', 'Same instance, same bind', 'No extra wiring needed'],
+    });
+    kbdTrigF.on('change', ({ value }) => { document.getElementById('kbd-trig-out').innerHTML = `<span>${value}</span>`; });
+    kbdTrigF.on('show', p => { document.getElementById('kbd-trig-out').innerHTML = `<span>opened via ${p.trigger}</span>`; });
+    Floater.bind(document.getElementById('kbd-trig-btn'), kbdTrigF, { trigger: 'click', arrowEl: document.getElementById('kbd-trig-arrow') });
+
+    const otoF = Floater.create('oto', 'popover', {
+        content: '<div style="padding:12px 16px;min-width:210px;font-size:12px;">Same instance both times - <strong>modal: true</strong> came from open(), not create().</div>',
+        closeButton: true,
+    });
+    otoF.on('show', p => { document.getElementById('oto-out').innerHTML = `<span>open - modal: ${!!p.opts.modal}</span>`; });
+    otoF.on('hidden', () => { document.getElementById('oto-out').innerHTML = '<span>closed</span>'; });
+    document.getElementById('oto-plain-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        otoF.open(this);
+    });
+    document.getElementById('oto-modal-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        otoF.open(this, { modal: true, centerX: true });
+    });
+
     // ── 11. Custom types ───────────────────────────────────────────────────
 
     Floater.registerType('color-palette', {
@@ -2076,19 +2191,20 @@
     // ── 12. Dynamic operations ─────────────────────────────────────────────
 
     let dynAlive = true;
+    let dynF = null;
     function makeDynTarget() {
-        const f = Floater.create('dyn-target', 'dropdown', {
+        dynF = Floater.create('dyn-target', 'dropdown', {
             items: [{ value: '1', label: 'One' }, { value: '2', label: 'Two' }, { value: '3', label: 'Three' }],
         });
         dynAlive = true;
         document.getElementById('dyn-status').innerHTML = `exists: <span>yes</span>`;
-        return f;
+        return dynF;
     }
     makeDynTarget();
     document.getElementById('dyn-target-btn').addEventListener('click', function(e) {
         e.stopPropagation();
-        if (!dynAlive) return;
-        Floater.get('dyn-target')?.toggle(this);
+        // Stale reference on purpose; after destroy the library warns instead of half-opening
+        dynF.toggle(this);
     });
     document.getElementById('dyn-create').onclick = () => {
         if (dynAlive) { document.getElementById('dyn-status').innerHTML = `exists: <span>yes (already exists)</span>`; return; }
@@ -2097,7 +2213,7 @@
     document.getElementById('dyn-destroy').onclick = () => {
         Floater.remove('dyn-target');
         dynAlive = false;
-        document.getElementById('dyn-status').innerHTML = `exists: <span style="color:rgba(255,100,100,0.85)">no</span>`;
+        document.getElementById('dyn-status').innerHTML = `exists: <span style="color:rgba(255,100,100,0.85)">no</span> - Open now warns in the log`;
     };
 
     for (const [sfx, label] of [['x', 'Test X (popover)'], ['y', 'Test Y (popover)'], ['z', 'Test Z (popover)']]) {
@@ -2146,6 +2262,28 @@
         const inst = Floater.get('mark-upd');
         if (!inst) { document.getElementById('api-out').innerHTML = `<span>null</span>`; return; }
         document.getElementById('api-out').innerHTML = `<span>id: "${inst.id}"\ntype: "${inst.type}"\nisOpen: ${inst.isOpen}\ncurrentValue: "${inst.opts.currentValue}"\npreferenceValue: "${inst.opts.preferenceValue}"</span>`;
+    };
+
+    const attLifeEl = document.getElementById('att-life-el');
+    const attLifeOut = document.getElementById('att-life-out');
+    let attLife = null;
+    document.getElementById('att-life-attach').onclick = () => {
+        if (Floater.has('att-life')) { attLifeOut.innerHTML = '<span>already attached</span>'; return; }
+        attLife = Floater.attach('att-life', attLifeEl, {});
+        attLifeOut.innerHTML = '<span>attached - wrapped in .fs-floater</span>';
+    };
+    document.getElementById('att-life-open').addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!attLife) { attLifeOut.innerHTML = 'attach it first'; return; }
+        attLife.toggle(this);
+    });
+    document.getElementById('att-life-destroy').onclick = () => {
+        if (!Floater.has('att-life')) { attLifeOut.innerHTML = 'nothing to destroy'; return; }
+        attLife.destroy();
+        const unwrapped = attLifeEl.parentElement?.classList.contains('card') && !attLifeEl.classList.contains('fs-floater-content');
+        attLifeOut.innerHTML = unwrapped
+            ? '<span>destroyed - element unwrapped, back in the card above</span>'
+            : '<span style="color:rgba(255,120,120,0.9)">unwrap failed</span>';
     };
 
     // ── 12b. Programmatic / remote triggers ───────────────────────────────
@@ -2743,7 +2881,7 @@
     sideCY.on('change', ({ label }) => { document.getElementById('side-cy-out').innerHTML = `<span>${label}</span>`; });
     Floater.bind(document.getElementById('side-cy-btn'), sideCY, { trigger: 'click', arrowEl: document.getElementById('side-cy-arrow') });
 
-    // ── 23. Press trigger + scroll select ─────────────────────────────────
+    // ── 22. Press trigger + scroll select ─────────────────────────────────
 
     const PRESS_ITEMS = [
         { value: 'red', label: 'Red' },
@@ -2871,6 +3009,15 @@
     });
     Floater.bind(scrollDtFullInp, scrollDtFullF, { trigger: 'focus', scrollSelect: true });
 
+    const scrollDtSecInp = document.getElementById('scroll-dt-sec-inp');
+    scrollDtSecInp.value = `${nowLocal}:00`;
+    const scrollDtSecF = Floater.create('scroll-dt-sec-f', 'datetime', { value: `${nowLocal}:00`, step: 15 });
+    scrollDtSecF.on('change', ({ value }) => {
+        scrollDtSecInp.value = value;
+        document.getElementById('scroll-dt-sec-out').innerHTML = `<span>${value}</span>`;
+    });
+    Floater.bind(scrollDtSecInp, scrollDtSecF, { trigger: 'focus', scrollSelect: true });
+
     // ── 23. Animations ───────────────────────────────────────────────────────
 
     const animCard = (icon, title, sub) => `<div class="anim-card">
@@ -2983,6 +3130,37 @@
     document.getElementById('query-all-btn').onclick = () => renderQuery();
     document.getElementById('query-type-btn').onclick = () => renderQuery({ type: 'popover' });
     document.getElementById('query-prefix-btn').onclick = () => renderQuery({ idPrefix: 'anim-' });
+
+    // ── 25. Warnings & errors ─────────────────────────────────────────────
+
+    const diagAnimF = Floater.create('diag-anim-f', 'popover', {
+        content: '<div style="padding:10px 14px;font-size:12px;max-width:240px;">animateIn: \'mega-zoom\' is not registered - opened with no animation, warned once.</div>',
+        animateIn: 'mega-zoom',
+    });
+    diagAnimF.on('show', () => { document.getElementById('diag-anim-out').innerHTML = '<span>opened - warn logged (first open only)</span>'; });
+    Floater.bind(document.getElementById('diag-anim-btn'), diagAnimF, { trigger: 'click' });
+
+    document.getElementById('diag-bind-btn').addEventListener('click', () => {
+        Floater.bind('#does-not-exist', diagAnimF);
+        document.getElementById('diag-bind-out').innerHTML = '<span>warn logged - selector matched nothing</span>';
+    });
+    document.getElementById('diag-trigger-btn').addEventListener('click', function() {
+        Floater.bind(this, diagAnimF, { trigger: 'dblclick' });
+        document.getElementById('diag-bind-out').innerHTML = '<span>warn logged - unknown trigger</span>';
+    });
+
+    const diagThrowF = Floater.create('diag-throw-f', 'dropdown', {
+        items: [{ value: 'a', label: 'Pick me' }, { value: 'b', label: 'Or me' }],
+    });
+    diagThrowF.on('change', () => { throw new Error('demo handler exploded'); });
+    diagThrowF.on('change', ({ label }) => {
+        document.getElementById('diag-throw-out').innerHTML = `<span>${label}</span> - 2nd handler ran, error logged`;
+    });
+    Floater.bind(document.getElementById('diag-throw-btn'), diagThrowF, { trigger: 'click' });
+
+    const diagFetchF = Floater.create('diag-fetch-f', 'fetch', {});
+    diagFetchF.on('show', () => { document.getElementById('diag-fetch-out').innerHTML = '<span>warn logged - error panel shown</span>'; });
+    Floater.bind(document.getElementById('diag-fetch-btn'), diagFetchF, { trigger: 'click' });
 
     // ── 18. setDefaults() ─────────────────────────────────────────────────
     // These calls are last so all earlier demo floaters are unaffected.

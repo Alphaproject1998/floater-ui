@@ -1,5 +1,5 @@
 /*!
- * floater-ui v0.2.0
+ * floater-ui v0.2.1
  * https://github.com/Alphaproject1998/floater-ui
  * (c) 2026 Jack Briggs - MIT License
  */
@@ -15,6 +15,7 @@ const Floater = (() => {
     let _openCount = 0;
     let _zCounter = 0;
     let _scrollBlockCount = 0;
+    let _prevBodyOverflow = '';
     const _registry = new Map();
     const _types = {};
     const _globalHandlers = {};
@@ -139,9 +140,9 @@ const Floater = (() => {
             _backdrop.id = 'FloaterBackdrop';
             _backdrop.addEventListener('click', e => {
                 e.stopPropagation();
-                const open = [..._registry.values()].filter(i => i.isOpen && i._opts.modal);
-                if (!open.length || open.some(i => i._opts.blockClicks)) return;
-                const closeable = open.filter(i => !i._opts.protected);
+                const open = [..._registry.values()].filter(i => i.isOpen && i._activeOpts.modal);
+                if (!open.length || open.some(i => i._activeOpts.blockClicks)) return;
+                const closeable = open.filter(i => !i._activeOpts.protected);
                 if (!closeable.length) return;
                 closeable.sort((a, b) => parseInt(a.el.style.zIndex || 0) - parseInt(b.el.style.zIndex || 0));
                 closeable[closeable.length - 1].close();
@@ -153,7 +154,7 @@ const Floater = (() => {
 
     function _updateBackdropState() {
         if (!_backdrop) return;
-        const anyModal = [..._registry.values()].some(i => i.isOpen && i._opts.modal);
+        const anyModal = [..._registry.values()].some(i => i.isOpen && i._activeOpts.modal);
         _backdrop.style.display = anyModal ? 'block' : 'none';
     }
 
@@ -193,7 +194,7 @@ const Floater = (() => {
 
     function _getScrollAncestors(el) {
         const result = [];
-        let p = el.parentElement;
+        let p = el instanceof Element ? el.parentElement : null;
         while (p && p !== document.documentElement) {
             const s = getComputedStyle(p);
             if (/auto|scroll/.test(s.overflowY + s.overflowX + s.overflow)) result.push(p);
@@ -331,7 +332,12 @@ const Floater = (() => {
     }
 
     function _resolveAnim(name) {
-        return name ? (_animations[name] || null) : null;
+        if (!name) return null;
+        if (!_animations[name]) {
+            _warnOnce(`anim:${name}`, `unknown animation "${name}" - register it with registerAnimation() first`);
+            return null;
+        }
+        return _animations[name];
     }
 
     // animateIn/OutDuration/Easing win over the shared animationDuration/Easing when in and out need to differ.
@@ -640,7 +646,15 @@ const Floater = (() => {
         const valEl = col.querySelector('.fs-spinner-val');
         if (!valEl) return false;
         if (seg === 'h') {
-            valEl.value = String((parseInt(valEl.value) + dir + 24) % 24).padStart(2, '0');
+            valEl.value = String(((parseInt(valEl.value) || 0) + dir + 24) % 24).padStart(2, '0');
+        } else if (seg === 'm') {
+            let m = (parseInt(valEl.value) || 0) + dir * step;
+            const hEl = instance.el.querySelector('.fs-spinner-val[data-seg="h"]');
+            let h = _segVal(hEl);
+            while (m < 0) { m += 60; h = (h - 1 + 24) % 24; }
+            while (m >= 60) { m -= 60; h = (h + 1) % 24; }
+            valEl.value = String(m).padStart(2, '0');
+            if (hEl) hEl.value = String(h).padStart(2, '0');
         } else {
             valEl.value = String(((parseInt(valEl.value) || 0) + dir * step + 60) % 60).padStart(2, '0');
         }
@@ -699,8 +713,9 @@ const Floater = (() => {
         const input = instance.el.querySelector(inputSel);
         if (!input) return;
         input.addEventListener('change', () => {
-            if (input.value) _setSpinnerFromValue(instance.el, inputType, input.value);
-            if (instance.opts.onChange !== false) instance.emit('change', { value: input.value });
+            if (!input.value) return;
+            _setSpinnerFromValue(instance.el, inputType, input.value);
+            syncFn(instance);
         });
     }
 
@@ -731,6 +746,10 @@ const Floater = (() => {
         return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     }
 
+    function _escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
     function _log(level, msg, data) {
         if (!_logger) return;
         if (_loggerFilter) {
@@ -741,13 +760,31 @@ const Floater = (() => {
         _logger(level, msg, data);
     }
 
+    function _warn(msg, data) {
+        _log('warn', msg, data);
+        if (data !== undefined) console.warn(`[Floater] ${msg}`, data);
+        else console.warn(`[Floater] ${msg}`);
+    }
+
+    const _warnedOnce = new Set();
+    function _warnOnce(key, msg, data) {
+        if (_warnedOnce.has(key)) return;
+        _warnedOnce.add(key);
+        _warn(msg, data);
+    }
+
+    function _error(msg, err) {
+        _log('error', msg, err);
+        console.error(`[Floater] ${msg}`, err);
+    }
+
     // Skips parent floaters (those whose el contains the anchor of the clicked floater).
     function _closeOnClickOutside(excludeInst) {
         const anchor = excludeInst._openAnchor;
         for (const other of _registry.values()) {
             if (other === excludeInst || !other.isOpen) continue;
-            if (other.opts.modal || other.opts.persistOnOutsideClick || other.opts.protected || other.opts.closeOnOutsideClick === false) continue;
-            if (other.opts.closeOnFloaterClick === false) continue;
+            if (other._activeOpts.modal || other._activeOpts.persistOnOutsideClick || other._activeOpts.protected || other._activeOpts.closeOnOutsideClick === false) continue;
+            if (other._activeOpts.closeOnFloaterClick === false) continue;
             if (anchor && typeof anchor.contains === 'function' && other.el.contains(anchor)) continue;
             const typeDef = _types[other.type];
             if (typeDef && typeDef.onClickOutside) typeDef.onClickOutside(other);
@@ -784,6 +821,8 @@ const Floater = (() => {
             this._openOpts = null;
             this._blockingScroll = false;
             this._animCancel = null;
+            this._pendingFinish = null;
+            this._wasHidden = false;
         }
 
         get id() { return this._id; }
@@ -791,6 +830,8 @@ const Floater = (() => {
         get type() { return this._type; }
         get isOpen() { return this._isOpen; }
         get opts() { return this._opts; }
+        // Immunity checks on an open floater have to read the merged set, not the base opts
+        get _activeOpts() { return this._isOpen && this._openOpts ? this._openOpts : this._opts; }
 
         on(event, fn) {
             if (!this._handlers[event]) this._handlers[event] = [];
@@ -806,13 +847,27 @@ const Floater = (() => {
 
         emit(event, data) {
             const payload = Object.assign({ id: this._id, type: this._type, opts: this._opts, trigger: 'programmatic' }, data);
-            for (const fn of (this._handlers[event] || [])) fn(payload, this);
-            for (const fn of (_globalHandlers[event] || [])) fn(this, payload);
+            for (const fn of (this._handlers[event] || [])) {
+                try { fn(payload, this); }
+                catch (err) { _error(`"${event}" handler on "${this._id}" threw`, err); }
+            }
+            for (const fn of (_globalHandlers[event] || [])) {
+                try { fn(this, payload); }
+                catch (err) { _error(`global "${event}" handler threw`, err); }
+            }
             _log('event', `${this._id}:${event}`, { data: payload, instance: this });
             return this;
         }
 
         open(anchor, openOpts) {
+            if (_registry.get(this._id) !== this) {
+                _warn(`open() on destroyed floater "${this._id}" - create or attach it again`);
+                return this;
+            }
+            // A pending out-animation finish still owns _originalParent, so let it run before the attach branch
+            // below re-captures: otherwise the container becomes the "original" parent and the element never goes home
+            if (this._animCancel) { this._animCancel(); this._animCancel = null; }
+            if (this._pendingFinish) this._pendingFinish();
             const merged = Object.assign({}, this._opts, openOpts);
             if (merged.arrowEl) this._currentArrowEl = merged.arrowEl;
             this._openAnchor = anchor;
@@ -826,13 +881,14 @@ const Floater = (() => {
             if (merged.closeOthers !== false) {
                 for (const other of _registry.values()) {
                     if (other === this || !other.isOpen) continue;
-                    if (other.opts.protected || other.opts.modal) continue;
-                    if ((_types[other.type] && _types[other.type].closeOthersImmune) || other.opts.closeOthersImmune) continue;
+                    if (other._activeOpts.protected || other._activeOpts.modal) continue;
+                    if ((_types[other.type] && _types[other.type].closeOthersImmune) || other._activeOpts.closeOthersImmune) continue;
                     other.close();
                 }
             }
+            const wasOpen = this._isOpen;
             const cont = _getContainer();
-            if (this._attached) {
+            if (this._attached && !wasOpen) {
                 this._originalParent = this._el.parentNode;
                 this._originalNextSibling = this._el.nextSibling;
                 cont.appendChild(this._el);
@@ -841,14 +897,18 @@ const Floater = (() => {
             if (cont.contains(this._el)) cont.appendChild(this._el);
             const zBoost = (_types[this._type] && _types[this._type].zPriority) || 0;
             this._el.style.zIndex = String(++_zCounter + zBoost);
+            if (anchor instanceof Element && !anchor.isConnected) _log('info', `floater "${this._id}" opened with a detached anchor`, { anchor });
             _position(anchor, this._el, merged);
             this._isOpen = true;
-            _openCount++;
+            if (!wasOpen) _openCount++;
 
             if (merged.modal) { _getBackdrop(); _updateBackdropState(); }
             if (merged.blockScroll && !this._blockingScroll) {
                 this._blockingScroll = true;
-                if (!_scrollBlockCount) document.body.style.overflow = 'hidden';
+                if (!_scrollBlockCount) {
+                    _prevBodyOverflow = document.body.style.overflow;
+                    document.body.style.overflow = 'hidden';
+                }
                 _scrollBlockCount++;
             }
 
@@ -860,7 +920,7 @@ const Floater = (() => {
             if (!scrollImmune) {
                 const scrollTargets = _getScrollAncestors(anchor);
                 if (merged.closeOnScroll === true) {
-                    const onScroll = () => { if (this._isOpen) this.close({ trigger: 'scroll-reposition' }); };
+                    const onScroll = () => { if (this._isOpen) this.close({ trigger: 'scroll' }); };
                     for (const target of scrollTargets) target.addEventListener('scroll', onScroll, { passive: true, once: true });
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
                 } else if (anchor && typeof anchor.getBoundingClientRect === 'function') {
@@ -891,7 +951,6 @@ const Floater = (() => {
 
             _updateFocusClasses();
             this.emit('show', { anchor, opts: merged, trigger });
-            if (this._animCancel) { this._animCancel(); this._animCancel = null; }
             const inAnim = _effectiveAnim(_resolveAnim(merged.animateIn), merged, 'in');
             if (inAnim) {
                 this._animCancel = _animate(this._el, inAnim, 'in', () => {
@@ -906,8 +965,9 @@ const Floater = (() => {
 
         close(closeOpts) {
             if (!this._isOpen) return this;
-            const merged = Object.assign({}, this._opts, closeOpts);
-            const trigger = merged.trigger || 'programmatic';
+            const merged = Object.assign({}, this._openOpts || this._opts, closeOpts);
+            // _openOpts carries the open's trigger, so the close trigger has to come from closeOpts alone
+            const trigger = (closeOpts && closeOpts.trigger) || 'programmatic';
             const typeDef = _types[this._type];
             if (typeDef && typeDef.onClose) typeDef.onClose(this, merged);
             this._isOpen = false;
@@ -916,12 +976,13 @@ const Floater = (() => {
             if (this._blockingScroll) {
                 this._blockingScroll = false;
                 if (_scrollBlockCount > 0) _scrollBlockCount--;
-                if (!_scrollBlockCount) document.body.style.overflow = '';
+                if (!_scrollBlockCount) document.body.style.overflow = _prevBodyOverflow;
             }
-            if (this._opts.modal) _updateBackdropState();
+            _updateBackdropState();
             _updateFocusClasses();
 
             const finish = () => {
+                this._pendingFinish = null;
                 _unposition(this._el, merged.arrowEl || this._currentArrowEl || null);
                 this._currentArrowEl = null;
                 if (this._attached && this._originalParent) {
@@ -932,6 +993,8 @@ const Floater = (() => {
                     }
                     this._originalParent = null;
                     this._originalNextSibling = null;
+                    // _unposition always hides the wrapper, so an element that was visible inline would vanish after its first open
+                    if (!this._wasHidden) this._el.removeAttribute('hidden');
                 }
                 this.emit('hidden', { trigger });
             };
@@ -940,6 +1003,7 @@ const Floater = (() => {
             this.emit('hide', { opts: merged, trigger });
             const outAnim = _effectiveAnim(_resolveAnim(merged.animateOut), merged, 'out');
             if (outAnim) {
+                this._pendingFinish = finish;
                 this._animCancel = _animate(this._el, outAnim, 'out', () => {
                     this._animCancel = null;
                     finish();
@@ -955,10 +1019,13 @@ const Floater = (() => {
         }
 
         update(updateOpts) {
+            updateOpts = updateOpts || {};
             Object.assign(this._opts, updateOpts);
             const typeDef = _types[this._type];
             if (typeDef && typeDef.onUpdate) typeDef.onUpdate(this, updateOpts);
-            if (updateOpts.currentValue !== undefined || updateOpts.preferenceValue !== undefined) {
+            // onUpdate may have rebuilt the content, so markers go back on whenever the instance has any
+            if (updateOpts.currentValue !== undefined || updateOpts.preferenceValue !== undefined
+                || this._opts.currentValue != null || this._opts.preferenceValue != null) {
                 _applyMarkers(this._el, this._opts);
             }
             this.emit('update', updateOpts);
@@ -966,11 +1033,26 @@ const Floater = (() => {
         }
 
         destroy() {
-            this.close();
+            this.close({ animateOut: null });
+            if (this._animCancel) { this._animCancel(); this._animCancel = null; }
+            if (this._pendingFinish) this._pendingFinish();
             for (const fn of this._cleanups) fn();
             this._cleanups = [];
             _registry.delete(this._id);
+            if (this._attached) {
+                const content = _content(this._el);
+                if (content) {
+                    content.classList.remove('fs-floater-content');
+                    if (this._wasHidden) content.setAttribute('hidden', '');
+                    this._el.replaceWith(content);
+                } else {
+                    this._el.remove();
+                }
+            } else {
+                this._el.remove();
+            }
             this.emit('destroy', {});
+            this._handlers = {};
         }
 
         _addCleanup(fn) { this._cleanups.push(fn); }
@@ -980,7 +1062,7 @@ const Floater = (() => {
         if (_openCount === 0) return;
         for (const instance of _registry.values()) {
             if (!instance.isOpen) continue;
-            if (instance.opts.modal || instance.opts.persistOnOutsideClick || instance.opts.protected || instance.opts.closeOnOutsideClick === false) continue;
+            if (instance._activeOpts.modal || instance._activeOpts.persistOnOutsideClick || instance._activeOpts.protected || instance._activeOpts.closeOnOutsideClick === false) continue;
             const typeDef = _types[instance.type];
             if (typeDef && typeDef.onClickOutside) {
                 typeDef.onClickOutside(instance);
@@ -992,9 +1074,10 @@ const Floater = (() => {
 
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape' || _openCount === 0) return;
-        const open = [..._registry.values()].filter(i => i.isOpen && i.opts.closeOnEscape !== false && !i.opts.protected && !i.opts.modal);
+        const open = [..._registry.values()].filter(i => i.isOpen && i._activeOpts.closeOnEscape !== false && !i._activeOpts.protected && !i._activeOpts.blockClicks);
         if (open.length === 0) return;
-        open[open.length - 1].close();
+        open.sort((a, b) => (parseInt(a.el.style.zIndex) || 0) - (parseInt(b.el.style.zIndex) || 0));
+        open[open.length - 1].close({ trigger: 'escape' });
     });
 
     // On visual viewport resize (mobile keyboard): close only floaters whose anchor would be hidden
@@ -1588,6 +1671,8 @@ const Floater = (() => {
                 dt.d = Math.min(dt.d, _daysInMonth(dt.y, dt.mo));
             } else if (seg === 'h') {
                 t.h = (t.h - delta + 24) % 24;
+            } else if (seg === 's') {
+                t.s = ((t.s || 0) - delta + 60) % 60;
             } else {
                 t.m -= delta * step;
                 while (t.m < 0) { t.m += 60; t.h = (t.h - 1 + 24) % 24; }
@@ -1609,8 +1694,14 @@ const Floater = (() => {
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
         onOpen(instance, anchor, opts) {
             const url = opts.url || instance.opts.url;
-            if (!url) return;
+            if (!url) {
+                _warn(`fetch floater "${instance.id}" opened with no url`);
+                _content(instance.el).innerHTML = '<div class="fs-fetch-error">No URL set</div>';
+                return;
+            }
             _content(instance.el).innerHTML = '<div class="fs-fetch-loading">Loading...</div>';
+            const token = (instance._fetchToken || 0) + 1;
+            instance._fetchToken = token;
             const method = opts.fetchMethod || instance.opts.fetchMethod || 'fetch';
             const transform = opts.transform || instance.opts.transform || null;
             const respType = opts.responseType || instance.opts.responseType || 'auto';
@@ -1630,6 +1721,13 @@ const Floater = (() => {
                 if (instance.isOpen && instance._openAnchor) _position(instance._openAnchor, instance.el, instance._openOpts || {});
             };
 
+            const handleError = err => {
+                if (!instance.isOpen || token !== instance._fetchToken) return;
+                _content(instance.el).innerHTML = `<div class="fs-fetch-error">Error: ${_escapeHtml(err.message || String(err))}</div>`;
+                _reposition();
+                instance.emit('error', { level: 2, url, error: err });
+            };
+
             if (detectedMedia) {
                 const tag = detectedMedia === 'image' ? 'img' : detectedMedia;
                 const el = document.createElement(tag);
@@ -1642,42 +1740,37 @@ const Floater = (() => {
                 wrap.className = 'fs-fetch-content';
                 wrap.appendChild(el);
                 content.appendChild(wrap);
-                el.addEventListener('load', _reposition);
-                el.addEventListener('loadedmetadata', _reposition);
-                instance.emit('loaded', { url });
+                const onMediaReady = () => { _reposition(); instance.emit('loaded', { url }); };
+                el.addEventListener('load', onMediaReady);
+                el.addEventListener('loadedmetadata', onMediaReady);
+                el.addEventListener('error', () => handleError(new Error(`Failed to load ${detectedMedia}`)));
                 return;
             }
 
             const handleContent = (text, contentType) => {
-                if (!instance.isOpen) return;
+                if (!instance.isOpen || token !== instance._fetchToken) return;
                 const ct = contentType || '';
                 let html;
                 if (transform) {
-                    html = transform(text, ct);
+                    try { html = transform(text, ct); }
+                    catch (err) { _error(`fetch transform for "${instance.id}" threw`, err); handleError(err); return; }
                 } else if (ct.includes('application/json') || respType === 'json') {
-                    try { html = `<pre>${JSON.stringify(JSON.parse(text), null, 2)}</pre>`; }
-                    catch { html = `<pre>${text}</pre>`; }
+                    try { html = `<pre>${_escapeHtml(JSON.stringify(JSON.parse(text), null, 2))}</pre>`; }
+                    catch { html = `<pre>${_escapeHtml(text)}</pre>`; }
                 } else if (ct.startsWith('image/') || respType === 'image') {
-                    html = `<img src="${url}" style="max-width:100%;display:block;" />`;
+                    html = `<img src="${_escapeHtml(url)}" style="max-width:100%;display:block;" />`;
                 } else if (ct.startsWith('video/') || respType === 'video') {
-                    html = `<video src="${url}" controls style="max-width:100%;"></video>`;
+                    html = `<video src="${_escapeHtml(url)}" controls style="max-width:100%;"></video>`;
                 } else if (ct.startsWith('audio/') || respType === 'audio') {
-                    html = `<audio src="${url}" controls style="width:100%;"></audio>`;
+                    html = `<audio src="${_escapeHtml(url)}" controls style="width:100%;"></audio>`;
                 } else {
-                    html = `<pre>${text.slice(0, 3000)}</pre>`;
+                    html = `<pre>${_escapeHtml(text.slice(0, 3000))}</pre>`;
                 }
                 _content(instance.el).innerHTML = `<div class="fs-fetch-content">${html}</div>`;
                 _reposition();
                 const mediaEl = instance.el.querySelector('img,video,audio');
                 if (mediaEl) { mediaEl.addEventListener('load', _reposition); mediaEl.addEventListener('loadedmetadata', _reposition); }
                 instance.emit('loaded', { url, contentType: ct });
-            };
-
-            const handleError = err => {
-                if (!instance.isOpen) return;
-                _content(instance.el).innerHTML = `<div class="fs-fetch-error">Error: ${err.message || String(err)}</div>`;
-                _reposition();
-                instance.emit('error', { level: 2, url, error: err });
             };
 
             if (method === 'xhr' || method === 'ajax') {
@@ -1930,10 +2023,12 @@ const Floater = (() => {
 
     return {
         registerType(name, def) {
+            if (!def || typeof def.build !== 'function') _warn(`registerType: "${name}" has no build() - create() will throw for this type`);
             _types[name] = Object.assign({}, def);
         },
 
         registerAnimation(name, def) {
+            if (!def || !def.inClass || !def.outClass) _warn(`registerAnimation: "${name}" needs inClass and outClass`);
             _animations[name] = Object.assign({ duration: 150, easing: 'ease' }, def);
         },
 
@@ -1941,9 +2036,9 @@ const Floater = (() => {
             opts = Object.assign({}, _defaults, _typeDefaults[type] || {}, opts || {});
             if (_registry.has(id)) _registry.get(id).destroy();
             const typeDef = _types[type];
-            if (!typeDef || !typeDef.build) throw new Error(`FloaterSystem.create: type "${type}" has no build()`);
+            if (!typeDef || !typeDef.build) throw new Error(`Floater.create: type "${type}" has no build()`);
             const content = typeDef.build(opts);
-            if (!(content instanceof Element)) throw new Error(`FloaterSystem.create: type "${type}" build() must return an Element`);
+            if (!(content instanceof Element)) throw new Error(`Floater.create: type "${type}" build() must return an Element`);
             const el = _wrapContent(content, opts);
             el.setAttribute('hidden', '');
             _getContainer().appendChild(el);
@@ -1970,6 +2065,7 @@ const Floater = (() => {
         },
 
         attach(id, el, opts) {
+            if (!(el instanceof Element)) throw new Error('Floater.attach: el must be a DOM element');
             const type = (opts || {}).type || 'generic';
             opts = Object.assign({}, _defaults, _typeDefaults[type] || {}, opts || {});
             if (_registry.has(id)) _registry.get(id).destroy();
@@ -1978,10 +2074,11 @@ const Floater = (() => {
             const wasHidden = el.hasAttribute('hidden');
             if (wasHidden) el.removeAttribute('hidden');
             const wrapper = _wrapContent(el, opts);
-            originalParent.insertBefore(wrapper, nextSibling);
+            if (originalParent) originalParent.insertBefore(wrapper, nextSibling);
             if (wasHidden) wrapper.setAttribute('hidden', '');
             const instance = new FloaterInstance(id, wrapper, type, opts);
             instance._attached = true;
+            instance._wasHidden = wasHidden;
             _registry.set(id, instance);
             wrapper.addEventListener('click', () => _closeOnClickOutside(instance));
             const typeDef = _types[type];
@@ -2002,16 +2099,17 @@ const Floater = (() => {
         closeAll(filter, opts) {
             const includeProtected = opts && opts.includeProtected;
             for (const instance of _registry.values()) {
-                if (!includeProtected && (instance.opts.protected || instance.opts.modal)) continue;
+                if (!includeProtected && (instance._activeOpts.protected || instance._activeOpts.modal)) continue;
                 if (_matchesFilter(instance, filter)) instance.close();
             }
         },
 
         bind(anchor, instance, opts) {
             opts = opts || {};
+            if (!instance || typeof instance.open !== 'function') throw new Error('Floater.bind: instance is not a floater - pass the result of create() or attach()');
             if (typeof anchor === 'string') {
                 const found = [...document.querySelectorAll(anchor)];
-                if (!found.length) return [];
+                if (!found.length) { _warn(`bind: selector "${anchor}" matched no elements`); return []; }
                 const results = found.map(a => this.bind(a, instance, opts));
                 return results.length === 1 ? results[0] : results;
             }
@@ -2074,7 +2172,11 @@ const Floater = (() => {
                     instance.toggle(anchor, Object.assign({}, opts, { trigger: 'click' }));
                 };
                 // mousedown toggles but click still bubbles to the document handler and closes immediately; stop it
-                const onClickStop = e => e.stopPropagation();
+                // Enter/Space fire a click with detail 0 and no mousedown; isTrusted is all that separates that from a scripted anchor.click()
+                const onClickStop = e => {
+                    e.stopPropagation();
+                    if (e.detail === 0) instance.toggle(anchor, Object.assign({}, opts, { trigger: e.isTrusted ? 'keyboard' : 'programmatic' }));
+                };
                 anchor.addEventListener('mousedown', onMouseDown);
                 anchor.addEventListener('click', onClickStop);
                 cleanup = () => {
@@ -2180,12 +2282,17 @@ const Floater = (() => {
                     document.removeEventListener('touchmove', onMove);
                     document.removeEventListener('touchend', onEnd);
                 };
+            } else if (trigger !== 'none') {
+                _warn(`bind: unknown trigger "${trigger}"`);
             }
 
             if (cleanup) instance._addCleanup(cleanup);
 
             if (opts.scrollSelect) {
                 const cb = typeof opts.scrollSelect === 'function' ? opts.scrollSelect : null;
+                if (!cb && !_types[instance.type]?.onScrollSelect) {
+                    _warnOnce(`scrollSelect:${instance.type}`, `bind: scrollSelect on type "${instance.type}" which has no onScrollSelect hook - scroll will do nothing`);
+                }
                 const onWheel = e => {
                     const typeDef = _types[instance.type];
                     if (!cb && !typeDef?.onScrollSelect) return;
