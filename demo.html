@@ -68,6 +68,13 @@
             letter-spacing: 0.06em;
         }
 
+        .card-why {
+            font-size: 11px;
+            line-height: 1.45;
+            color: rgba(255,255,255,0.45);
+            max-width: 320px;
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -255,9 +262,9 @@
         }
 
         /* Custom registerAnimation() example - the library only needs class names, the CSS is ours */
-        .demo-anim-flip {
+        .demo-anim-swing {
             opacity: 0;
-            transform: perspective(600px) rotateX(-90deg);
+            transform: rotate(-7deg) translateY(-16px);
         }
 
         /* Nicer content for the animation demo popovers */
@@ -1257,22 +1264,60 @@
 
         <div class="card">
             <div class="card-label">animateIn/Out: 'fade'</div>
+            <div class="card-why">Safe default. Nothing moves.</div>
             <button class="btn" id="anim-fade-btn">Fade</button>
         </div>
 
         <div class="card">
             <div class="card-label">animateIn/Out: 'scale'</div>
+            <div class="card-why">Feels like it came out of the button. Menus, pickers.</div>
             <button class="btn" id="anim-scale-btn">Scale</button>
         </div>
 
         <div class="card">
-            <div class="card-label">animateIn: 'slide-down', animateOut: 'slide-up'</div>
-            <button class="btn" id="anim-slide-btn">Slide</button>
+            <div class="card-label">animateIn/Out: 'spring'</div>
+            <div class="card-why">Playful and heavy. Save it for rare floaters.</div>
+            <button class="btn" id="anim-spring-btn">Spring</button>
         </div>
 
         <div class="card">
-            <div class="card-label">Floater.registerAnimation('flip', {...}) - custom animation, own CSS classes registered by the page</div>
+            <div class="card-label">animateIn/Out: 'flip'</div>
+            <div class="card-why">Loud. Cards and reveals, not menus.</div>
             <button class="btn" id="anim-flip-btn">Flip</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">animateIn/Out: 'unfold'</div>
+            <div class="card-why">Hinged to whatever sits above it. Nav drawers.</div>
+            <button class="btn" id="anim-unfold-btn">Unfold</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Floater.registerAnimation('swing', {...})</div>
+            <div class="card-why">Two CSS classes the page owns.</div>
+            <button class="btn" id="anim-swing-btn">Swing</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Fixed direction: 'slide-down' / 'slide-up'</div>
+            <div class="card-why">One direction, whatever side it lands on. Forced above, it slides into the anchor.</div>
+            <button class="btn" id="anim-slide-above-btn">Forced above</button>
+            <button class="btn" id="anim-slide-below-btn">Opens below</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Anchored: 'shift-away'</div>
+            <div class="card-why">Direction follows the side it lands on. Always pulls away, returns on close.</div>
+            <button class="btn" id="anim-shift-away-above-btn">Forced above</button>
+            <button class="btn" id="anim-shift-away-below-btn">Opens below</button>
+            <button class="btn" id="anim-shift-away-right-btn">Forced right</button>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Anchored: 'shift-toward'</div>
+            <div class="card-why">Mirror of shift-away: settles in toward the anchor.</div>
+            <button class="btn" id="anim-shift-toward-below-btn">Opens below</button>
+            <button class="btn" id="anim-shift-toward-right-btn">Forced right</button>
         </div>
 
         <div class="card">
@@ -3026,35 +3071,82 @@
         <div class="anim-card-sub">${sub}</div>
     </div>`;
 
-    const animFadeF = Floater.create('anim-fade-f', 'popover', {
+    const animPreset = (id, btnId, opts) => {
+        const f = Floater.create(id, 'popover', opts);
+        Floater.bind(document.getElementById(btnId), f, { trigger: 'click' });
+        return f;
+    };
+
+    const animFadeF = animPreset('anim-fade-f', 'anim-fade-btn', {
         content: animCard('🌫️', 'Fade', 'Opacity in, opacity out'),
         animateIn: 'fade', animateOut: 'fade',
     });
-    Floater.bind(document.getElementById('anim-fade-btn'), animFadeF, { trigger: 'click' });
 
-    const animScaleF = Floater.create('anim-scale-f', 'popover', {
+    const animScaleF = animPreset('anim-scale-f', 'anim-scale-btn', {
         content: animCard('🔍', 'Scale', 'Grows in, shrinks out'),
         animateIn: 'scale', animateOut: 'scale',
     });
-    Floater.bind(document.getElementById('anim-scale-btn'), animScaleF, { trigger: 'click' });
 
-    const animSlideF = Floater.create('anim-slide-f', 'popover', {
-        content: animCard('↕️', 'Slide', 'Down in, up out'),
+    animPreset('anim-spring-f', 'anim-spring-btn', {
+        content: animCard('🧨', 'Spring', 'Overshoots, settles back'),
+        animateIn: 'spring', animateOut: 'spring',
+    });
+
+    animPreset('anim-flip-f', 'anim-flip-btn', {
+        content: animCard('🔄', 'Flip', 'Rotates in on the X axis'),
+        animateIn: 'flip', animateOut: 'flip',
+    });
+
+    animPreset('anim-unfold-f', 'anim-unfold-btn', {
+        content: animCard('📐', 'Unfold', 'Grows down from the top edge'),
+        animateIn: 'unfold', animateOut: 'unfold',
+    });
+
+    animPreset('anim-slide-below-f', 'anim-slide-below-btn', {
+        content: animCard('⬇️', 'slide-down', 'Below the anchor: slides down into place'),
         animateIn: 'slide-down', animateOut: 'slide-up',
     });
-    Floater.bind(document.getElementById('anim-slide-btn'), animSlideF, { trigger: 'click' });
+
+    animPreset('anim-slide-above-f', 'anim-slide-above-btn', {
+        content: animCard('⬇️', 'slide-down', 'Above the anchor: still slides down, now into it'),
+        animateIn: 'slide-down', animateOut: 'slide-up', preferAbove: true,
+    });
+
+    animPreset('anim-shift-away-below-f', 'anim-shift-away-below-btn', {
+        content: animCard('⬆️', 'shift-away', 'Below the anchor: pulls down, away from it'),
+        animateIn: 'shift-away', animateOut: 'shift-away',
+    });
+
+    animPreset('anim-shift-away-above-f', 'anim-shift-away-above-btn', {
+        content: animCard('⬆️', 'shift-away', 'Above the anchor: flips, pulls up, away from it'),
+        animateIn: 'shift-away', animateOut: 'shift-away', preferAbove: true,
+    });
+
+    animPreset('anim-shift-away-right-f', 'anim-shift-away-right-btn', {
+        content: animCard('➡️', 'shift-away', 'Beside the anchor: the shift moves to the X axis'),
+        animateIn: 'shift-away', animateOut: 'shift-away', preferRight: true, centerY: true,
+    });
+
+    animPreset('anim-shift-toward-below-f', 'anim-shift-toward-below-btn', {
+        content: animCard('🧲', 'shift-toward', 'Starts low, settles up toward the anchor'),
+        animateIn: 'shift-toward', animateOut: 'shift-toward',
+    });
+
+    animPreset('anim-shift-toward-right-f', 'anim-shift-toward-right-btn', {
+        content: animCard('🧲', 'shift-toward', 'Starts out wide, settles back toward the anchor'),
+        animateIn: 'shift-toward', animateOut: 'shift-toward', preferRight: true, centerY: true,
+    });
 
     // registerAnimation() - a custom animation is just a class name pair the page owns; the library
     // only applies/removes the classes and waits for transitionend, it doesn't care what's in them
-    Floater.registerAnimation('flip', {
-        inClass: 'demo-anim-flip', outClass: 'demo-anim-flip',
-        duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)',
+    Floater.registerAnimation('swing', {
+        inClass: 'demo-anim-swing', outClass: 'demo-anim-swing',
+        duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)',
     });
-    const animFlipF = Floater.create('anim-flip-f', 'popover', {
-        content: animCard('🔄', 'Flip', 'Custom registerAnimation()'),
-        animateIn: 'flip', animateOut: 'flip',
+    animPreset('anim-swing-f', 'anim-swing-btn', {
+        content: animCard('🎫', 'Swing', 'Custom registerAnimation()'),
+        animateIn: 'swing', animateOut: 'swing',
     });
-    Floater.bind(document.getElementById('anim-flip-btn'), animFlipF, { trigger: 'click' });
 
     // update({ animateIn, animateOut, animateInDuration, animateOutDuration }) - swap a floater's
     // animation and per-direction duration on demand, no recreate needed. The pickers for all four
@@ -3075,14 +3167,14 @@
     renderAnimSwitchOut();
 
     const animSwitchInDD = Floater.create('anim-switch-in-dd', 'dropdown', {
-        items: ['fade', 'scale', 'slide-down', 'slide-left', 'flip'].map(v => ({ value: v, label: v })),
+        items: ['fade', 'scale', 'slide-down', 'slide-left', 'spring', 'flip', 'unfold', 'shift-away', 'shift-toward', 'swing'].map(v => ({ value: v, label: v })),
         currentValue: 'fade',
     });
     animSwitchInDD.on('change', ({ value }) => { animSwitchF.update({ animateIn: value }); renderAnimSwitchOut(); });
     Floater.bind(document.getElementById('anim-switch-in-btn'), animSwitchInDD, { trigger: 'click', arrowEl: document.getElementById('anim-switch-in-arrow') });
 
     const animSwitchOutDD = Floater.create('anim-switch-out-dd', 'dropdown', {
-        items: ['fade', 'scale', 'slide-up', 'slide-right', 'flip'].map(v => ({ value: v, label: v })),
+        items: ['fade', 'scale', 'slide-up', 'slide-right', 'spring', 'flip', 'unfold', 'shift-away', 'shift-toward', 'swing'].map(v => ({ value: v, label: v })),
         currentValue: 'fade',
     });
     animSwitchOutDD.on('change', ({ value }) => { animSwitchF.update({ animateOut: value }); renderAnimSwitchOut(); });

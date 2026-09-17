@@ -1,5 +1,5 @@
 /*!
- * floater-ui v0.2.1
+ * floater-ui v0.2.2
  * https://github.com/Alphaproject1998/floater-ui
  * (c) 2026 Jack Briggs - MIT License
  */
@@ -22,6 +22,12 @@ const Floater = (() => {
     const _animations = {};
     for (const name of ['fade', 'scale', 'slide-down', 'slide-up', 'slide-left', 'slide-right']) {
         _animations[name] = { inClass: `fs-anim-${name}-enter`, outClass: `fs-anim-${name}-exit`, duration: 150, easing: 'ease' };
+    }
+    _animations['spring'] = { inClass: 'fs-anim-spring-enter', outClass: 'fs-anim-spring-exit', duration: 320, easing: 'cubic-bezier(0.34,1.56,0.64,1)' };
+    _animations['flip'] = { inClass: 'fs-anim-flip-enter', outClass: 'fs-anim-flip-exit', duration: 220, easing: 'cubic-bezier(0.2,0.8,0.2,1)' };
+    _animations['unfold'] = { baseClass: 'fs-anim-unfold', inClass: 'fs-anim-unfold-enter', outClass: 'fs-anim-unfold-exit', duration: 200, easing: 'cubic-bezier(0.2,0.8,0.2,1)' };
+    for (const name of ['shift-away', 'shift-toward']) {
+        _animations[name] = { directional: true, duration: 200, easing: 'ease-out' };
     }
 
     (() => {
@@ -121,6 +127,20 @@ const Floater = (() => {
             '.fs-anim-slide-left-exit{opacity:0;transform:translateX(-8px);}',
             '.fs-anim-slide-right-enter{opacity:0;transform:translateX(-8px);}',
             '.fs-anim-slide-right-exit{opacity:0;transform:translateX(8px);}',
+            '.fs-anim-spring-enter{opacity:0;transform:scale(0.75);}',
+            '.fs-anim-spring-exit{opacity:0;transform:scale(0.85);}',
+            '.fs-anim-flip-enter{opacity:0;transform:perspective(600px) rotateX(-90deg);}',
+            '.fs-anim-flip-exit{opacity:0;transform:perspective(600px) rotateX(90deg);}',
+            '.fs-anim-unfold{transform-origin:top center;}',
+            '.fs-anim-unfold-enter,.fs-anim-unfold-exit{opacity:0;transform:scaleY(0.02);}',
+            '.fs-anim-shift-away-below{opacity:0;transform:translateY(-10px);}',
+            '.fs-anim-shift-away-above{opacity:0;transform:translateY(10px);}',
+            '.fs-anim-shift-away-right{opacity:0;transform:translateX(-10px);}',
+            '.fs-anim-shift-away-left{opacity:0;transform:translateX(10px);}',
+            '.fs-anim-shift-toward-below{opacity:0;transform:translateY(10px);}',
+            '.fs-anim-shift-toward-above{opacity:0;transform:translateY(-10px);}',
+            '.fs-anim-shift-toward-right{opacity:0;transform:translateX(10px);}',
+            '.fs-anim-shift-toward-left{opacity:0;transform:translateX(-10px);}',
         ].join('');
         (document.head || document.documentElement).appendChild(s);
     })();
@@ -204,6 +224,27 @@ const Floater = (() => {
         return result;
     }
 
+    function _measure(floater, capW) {
+        floater.style.position = 'fixed';
+        floater.style.visibility = 'hidden';
+        floater.style.minWidth = '';
+        floater.style.maxHeight = 'none';
+        floater.style.maxWidth = capW != null ? capW + 'px' : 'none';
+        floater.style.overflowY = '';
+        floater.style.top = '-9999px';
+        floater.style.left = '0';
+        floater.removeAttribute('hidden');
+        const h = floater.scrollHeight;
+        const w = floater.getBoundingClientRect().width;
+        floater.setAttribute('hidden', '');
+        floater.style.visibility = '';
+        floater.style.top = '';
+        floater.style.left = '';
+        floater.style.maxHeight = '';
+        floater.style.maxWidth = '';
+        return { h, w };
+    }
+
     function _position(anchor, floater, opts) {
         opts = opts || {};
         const arrowEl = opts.arrowEl || null;
@@ -216,23 +257,7 @@ const Floater = (() => {
         const minWidth = opts.minWidth != null ? opts.minWidth : null;
         const fitContent = opts.fitContent || false;
 
-        floater.style.position = 'fixed';
-        floater.style.visibility = 'hidden';
-        floater.style.minWidth = '';
-        floater.style.maxHeight = 'none';
-        floater.style.maxWidth = 'none';
-        floater.style.overflowY = '';
-        floater.style.top = '-9999px';
-        floater.style.left = '0';
-        floater.removeAttribute('hidden');
-        const natH = floater.scrollHeight;
-        const natW = floater.offsetWidth;
-        floater.setAttribute('hidden', '');
-        floater.style.visibility = '';
-        floater.style.top = '';
-        floater.style.left = '';
-        floater.style.maxHeight = '';
-        floater.style.maxWidth = '';
+        const { h: natH, w: natW } = _measure(floater, null);
 
         let anchorRect;
         if (anchor && typeof anchor.getBoundingClientRect === 'function') {
@@ -257,7 +282,8 @@ const Floater = (() => {
                 : (spaceLeft < natW && spaceRight > spaceLeft);
             const availW = Math.max(0, openRight ? spaceRight : spaceLeft);
             const actualW = Math.min(natW, availW);
-            const actualH = Math.min(natH, vH - 8);
+            const boxH = actualW < natW ? _measure(floater, actualW).h : natH;
+            const actualH = Math.min(boxH, vH - 8);
 
             let top = centerY
                 ? anchorRect.top + anchorRect.height / 2 - actualH / 2
@@ -275,11 +301,11 @@ const Floater = (() => {
             floater.style.minWidth = (minWidth || 0) + 'px';
             floater.style.maxWidth = actualW + 'px';
             floater.style.maxHeight = actualH + 'px';
-            floater.style.overflowY = natH > actualH ? 'auto' : 'hidden';
+            floater.style.overflowY = boxH > actualH ? 'auto' : 'hidden';
             floater.style.bottom = '';
             if (arrowEl) arrowEl.style.transform = openRight ? 'rotate(0deg)' : 'rotate(180deg)';
             floater.removeAttribute('hidden');
-            return { openBelow: null, openRight, actualH, natH };
+            return { openBelow: null, openRight, actualH, natH: boxH };
         }
 
         const spaceBelow = vH - anchorRect.bottom - gap;
@@ -288,7 +314,9 @@ const Floater = (() => {
             ? (spaceAbove < natH && spaceBelow > spaceAbove)
             : (spaceBelow >= natH || spaceBelow >= spaceAbove);
         const avail = openBelow ? spaceBelow : spaceAbove;
-        const actualH = Math.min(natH, avail);
+        const cappedW = Math.min(natW, vW - 8);
+        const boxH = cappedW < natW ? _measure(floater, cappedW).h : natH;
+        const actualH = Math.min(boxH, avail);
 
         const effectiveMinW = fitContent ? (minWidth || 0) : (minWidth != null ? minWidth : anchorRect.width);
         const layoutW = Math.min(Math.max(natW, effectiveMinW), vW - 8);
@@ -303,7 +331,7 @@ const Floater = (() => {
         floater.style.minWidth = effectiveMinW + 'px';
         floater.style.maxWidth = (vW - 8) + 'px';
         floater.style.maxHeight = actualH + 'px';
-        floater.style.overflowY = natH > avail ? 'auto' : 'hidden';
+        floater.style.overflowY = boxH > avail ? 'auto' : 'hidden';
         floater.style.bottom = '';
 
         if (openBelow) {
@@ -314,7 +342,7 @@ const Floater = (() => {
         if (arrowEl) arrowEl.style.transform = openBelow ? 'rotate(90deg)' : 'rotate(-90deg)';
 
         floater.removeAttribute('hidden');
-        return { openBelow, actualH, natH };
+        return { openBelow, actualH, natH: boxH };
     }
 
     function _unposition(floater, arrowEl) {
@@ -331,13 +359,16 @@ const Floater = (() => {
         if (arrowEl) arrowEl.style.transform = '';
     }
 
-    function _resolveAnim(name) {
+    function _resolveAnim(name, placement) {
         if (!name) return null;
-        if (!_animations[name]) {
+        const anim = _animations[name];
+        if (!anim) {
             _warnOnce(`anim:${name}`, `unknown animation "${name}" - register it with registerAnimation() first`);
             return null;
         }
-        return _animations[name];
+        if (!anim.directional) return anim;
+        const cls = `fs-anim-${name}-${placement || 'below'}`;
+        return { inClass: cls, outClass: cls, duration: anim.duration, easing: anim.easing };
     }
 
     // animateIn/OutDuration/Easing win over the shared animationDuration/Easing when in and out need to differ.
@@ -346,6 +377,7 @@ const Floater = (() => {
         const durationOverride = direction === 'in' ? opts.animateInDuration : opts.animateOutDuration;
         const easingOverride = direction === 'in' ? opts.animateInEasing : opts.animateOutEasing;
         return {
+            baseClass: anim.baseClass,
             inClass: anim.inClass,
             outClass: anim.outClass,
             duration: durationOverride != null ? durationOverride : (opts.animationDuration != null ? opts.animationDuration : anim.duration),
@@ -361,6 +393,7 @@ const Floater = (() => {
         const cls = direction === 'in' ? anim.inClass : anim.outClass;
 
         el.style.transition = 'none';
+        if (anim.baseClass) el.classList.add(anim.baseClass);
         if (direction === 'in') el.classList.add(cls);
         void el.offsetWidth;
 
@@ -370,6 +403,7 @@ const Floater = (() => {
             clearTimeout(fallback);
             cancelAnimationFrame(raf);
             el.style.transition = '';
+            if (anim.baseClass) el.classList.remove(anim.baseClass);
         };
         const onEnd = e => {
             if (e.target !== el) return;
@@ -821,6 +855,7 @@ const Floater = (() => {
             this._openOpts = null;
             this._blockingScroll = false;
             this._animCancel = null;
+            this._placement = null;
             this._pendingFinish = null;
             this._wasHidden = false;
         }
@@ -898,7 +933,8 @@ const Floater = (() => {
             const zBoost = (_types[this._type] && _types[this._type].zPriority) || 0;
             this._el.style.zIndex = String(++_zCounter + zBoost);
             if (anchor instanceof Element && !anchor.isConnected) _log('info', `floater "${this._id}" opened with a detached anchor`, { anchor });
-            _position(anchor, this._el, merged);
+            const placed = _position(anchor, this._el, merged);
+            this._placement = placed.openBelow === null ? (placed.openRight ? 'right' : 'left') : (placed.openBelow ? 'below' : 'above');
             this._isOpen = true;
             if (!wasOpen) _openCount++;
 
@@ -951,7 +987,7 @@ const Floater = (() => {
 
             _updateFocusClasses();
             this.emit('show', { anchor, opts: merged, trigger });
-            const inAnim = _effectiveAnim(_resolveAnim(merged.animateIn), merged, 'in');
+            const inAnim = _effectiveAnim(_resolveAnim(merged.animateIn, this._placement), merged, 'in');
             if (inAnim) {
                 this._animCancel = _animate(this._el, inAnim, 'in', () => {
                     this._animCancel = null;
@@ -1001,7 +1037,7 @@ const Floater = (() => {
 
             if (this._animCancel) { this._animCancel(); this._animCancel = null; }
             this.emit('hide', { opts: merged, trigger });
-            const outAnim = _effectiveAnim(_resolveAnim(merged.animateOut), merged, 'out');
+            const outAnim = _effectiveAnim(_resolveAnim(merged.animateOut, this._placement), merged, 'out');
             if (outAnim) {
                 this._pendingFinish = finish;
                 this._animCancel = _animate(this._el, outAnim, 'out', () => {

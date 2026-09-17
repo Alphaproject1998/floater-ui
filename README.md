@@ -26,7 +26,7 @@ npm install floater-ui
 
 **CDN**
 ```html
-<script src="https://unpkg.com/floater-ui@0.2.1/floater.js"></script>
+<script src="https://unpkg.com/floater-ui@0.2.2/floater.js"></script>
 ```
 
 **Manual** - download `floater.js` and include it directly:
@@ -358,7 +358,9 @@ Notes:
 
 ## Animations
 
-Opt-in per instance or via defaults. Built-in presets: `fade`, `scale`, `slide-down`, `slide-up`, `slide-left`, `slide-right`.
+Opt-in per instance or via defaults. Built-in presets: `fade`, `scale`, `slide-down`, `slide-up`, `slide-left`, `slide-right`, `spring`, `flip`, `unfold`, `shift-away`, `shift-toward`.
+
+`shift-away` and `shift-toward` are directional: they read the side the floater actually opened on and shift on that axis, away from the anchor or toward it. `unfold` grows from the top edge.
 
 | Opt | Description |
 |---|---|
@@ -378,17 +380,17 @@ Floater.create('tip', 'popover', {
 Custom animations are a pair of CSS classes you own. The library applies the class, forces a reflow so the start frame renders, transitions to the resting state, and cleans up on `transitionend`:
 
 ```css
-.my-flip {
+.my-swing {
     opacity: 0;
-    transform: perspective(600px) rotateX(-90deg);
+    transform: rotate(-7deg) translateY(-16px);
 }
 ```
 
 ```js
-Floater.registerAnimation('flip', {
-    inClass: 'my-flip',
-    outClass: 'my-flip',
-    duration: 220,
+Floater.registerAnimation('swing', {
+    inClass: 'my-swing',
+    outClass: 'my-swing',
+    duration: 260,
     easing: 'cubic-bezier(.2,.8,.2,1)',
 });
 ```
