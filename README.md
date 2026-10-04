@@ -26,7 +26,7 @@ npm install floater-ui
 
 **CDN**
 ```html
-<script src="https://unpkg.com/floater-ui@0.2.1/floater.js"></script>
+<script src="https://unpkg.com/floater-ui@0.2.3/floater.js"></script>
 ```
 
 **Manual** - download `floater.js` and include it directly:
@@ -70,8 +70,8 @@ That's a working dropdown: positioned against the button, flips when near the vi
 | `audio` | Audio player |
 | `video` | Video player |
 | `image` | Image viewer |
-| `persist` | Persistent panel - stays open until explicitly closed |
-| `modal` | Modal with backdrop |
+| `persist` | Persistent panel - stays open until explicitly closed; implies `persistOnOutsideClick` |
+| `modal` | Modal with backdrop; implies `modal: true` |
 | `context-menu` | Right-click context menu with icons, shortcuts, separators |
 
 ## API
@@ -298,6 +298,7 @@ Positioning is viewport-aware: the floater flips to the other side when space ru
 | `protected` | Same immunity as `modal` but no backdrop; Escape ignored |
 | `closeOnOutsideClick: false` | Outside clicks don't close, but scroll still repositions |
 | `closeOnScroll: true` | Closes on scroll instead of repositioning |
+| `hideOnAnchorClip: false` | Keeps the floater rendering after its anchor scrolls out of a clipping ancestor; by default it hides until the anchor scrolls back |
 | `closeOthers: false` | Don't close other floaters when this one opens |
 | `closeOthersImmune` | Skip this floater when another floater's `closeOthers` runs |
 | `closeOnFloaterClick: false` | Stay open when a click lands inside a different floater |
@@ -358,7 +359,9 @@ Notes:
 
 ## Animations
 
-Opt-in per instance or via defaults. Built-in presets: `fade`, `scale`, `slide-down`, `slide-up`, `slide-left`, `slide-right`.
+Opt-in per instance or via defaults. Built-in presets: `fade`, `scale`, `slide-down`, `slide-up`, `slide-left`, `slide-right`, `spring`, `flip`, `unfold`, `shift-away`, `shift-toward`.
+
+`shift-away` and `shift-toward` are directional: they read the side the floater actually opened on and shift on that axis, away from the anchor or toward it. `unfold` grows from the top edge.
 
 | Opt | Description |
 |---|---|
@@ -378,17 +381,17 @@ Floater.create('tip', 'popover', {
 Custom animations are a pair of CSS classes you own. The library applies the class, forces a reflow so the start frame renders, transitions to the resting state, and cleans up on `transitionend`:
 
 ```css
-.my-flip {
+.my-swing {
     opacity: 0;
-    transform: perspective(600px) rotateX(-90deg);
+    transform: rotate(-7deg) translateY(-16px);
 }
 ```
 
 ```js
-Floater.registerAnimation('flip', {
-    inClass: 'my-flip',
-    outClass: 'my-flip',
-    duration: 220,
+Floater.registerAnimation('swing', {
+    inClass: 'my-swing',
+    outClass: 'my-swing',
+    duration: 260,
     easing: 'cubic-bezier(.2,.8,.2,1)',
 });
 ```

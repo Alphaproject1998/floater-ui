@@ -1,5 +1,5 @@
 /*!
- * floater-ui v0.2.1
+ * floater-ui v0.2.3
  * https://github.com/Alphaproject1998/floater-ui
  * (c) 2026 Jack Briggs - MIT License
  */
@@ -23,6 +23,12 @@ const Floater = (() => {
     for (const name of ['fade', 'scale', 'slide-down', 'slide-up', 'slide-left', 'slide-right']) {
         _animations[name] = { inClass: `fs-anim-${name}-enter`, outClass: `fs-anim-${name}-exit`, duration: 150, easing: 'ease' };
     }
+    _animations['spring'] = { inClass: 'fs-anim-spring-enter', outClass: 'fs-anim-spring-exit', duration: 320, easing: 'cubic-bezier(0.34,1.56,0.64,1)' };
+    _animations['flip'] = { inClass: 'fs-anim-flip-enter', outClass: 'fs-anim-flip-exit', duration: 220, easing: 'cubic-bezier(0.2,0.8,0.2,1)' };
+    _animations['unfold'] = { baseClass: 'fs-anim-unfold', inClass: 'fs-anim-unfold-enter', outClass: 'fs-anim-unfold-exit', duration: 200, easing: 'cubic-bezier(0.2,0.8,0.2,1)' };
+    for (const name of ['shift-away', 'shift-toward']) {
+        _animations[name] = { directional: true, duration: 200, easing: 'ease-out' };
+    }
 
     (() => {
         const s = document.createElement('style');
@@ -33,6 +39,7 @@ const Floater = (() => {
             // Base visual style - all floaters (create() and attach()) get this; callsite CSS overrides as needed
             '.fs-floater{background:#1e1e1e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,0.65),0 1px 4px rgba(0,0,0,0.3);color:rgba(255,255,255,0.85);font-size:13px;font-family:inherit;}',
             '.fs-floater[hidden]{display:none!important;}',
+            '.fs-floater.fs-anchor-clipped{visibility:hidden;pointer-events:none;}',
             // Close button - positioned absolute inside floater; floater must be position:relative
             '.fs-floater:has(.fs-close-btn){position:relative;}',
             '.fs-close-btn{position:absolute;top:5px;right:6px;background:none;border:none;color:rgba(255,255,255,0.35);cursor:pointer;font-size:16px;line-height:1;padding:2px 5px;border-radius:3px;transition:color 0.1s,background 0.1s;z-index:1;}',
@@ -72,6 +79,8 @@ const Floater = (() => {
             '.fs-input-field:focus{border-color:rgba(255,255,255,0.55);outline:none;}',
             '.fs-spinner-panel{padding:8px;position:relative;}',
             '.fs-spinner{display:flex;align-items:center;gap:4px;}',
+            '.fs-spinner-datetime{flex-wrap:wrap;row-gap:6px;}',
+            '.fs-spinner-gap{width:8px;height:1px;align-self:center;background:rgba(255,255,255,0.12);}',
             '.fs-spinner-col{display:flex;flex-direction:column;align-items:center;gap:2px;}',
             '.fs-spinner-btn{background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:3px;width:28px;height:20px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;transition:background 0.1s,border-color 0.1s,color 0.1s;padding:0;line-height:1;}',
             '.fs-spinner-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.3);color:white;}',
@@ -90,6 +99,7 @@ const Floater = (() => {
             '.fs-fetch-content{font-size:12px;color:rgba(255,255,255,0.8);padding:4px;}',
             '.fs-fetch-content pre{font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;}',
             '.fs-fetch-content img,.fs-fetch-content video,.fs-fetch-content audio{max-width:100%;display:block;}',
+            '.fs-fetch-content audio{width:100%;}',
             '.fs-context-menu{display:flex;flex-direction:column;padding:3px 0;min-width:150px;}',
             '.fs-ctx-item{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;color:rgba(255,255,255,0.8);transition:background 0.1s,color 0.1s;white-space:nowrap;user-select:none;}',
             '.fs-ctx-item:hover{background:rgba(255,255,255,0.09);color:white;}',
@@ -121,6 +131,20 @@ const Floater = (() => {
             '.fs-anim-slide-left-exit{opacity:0;transform:translateX(-8px);}',
             '.fs-anim-slide-right-enter{opacity:0;transform:translateX(-8px);}',
             '.fs-anim-slide-right-exit{opacity:0;transform:translateX(8px);}',
+            '.fs-anim-spring-enter{opacity:0;transform:scale(0.75);}',
+            '.fs-anim-spring-exit{opacity:0;transform:scale(0.85);}',
+            '.fs-anim-flip-enter{opacity:0;transform:perspective(600px) rotateX(-90deg);}',
+            '.fs-anim-flip-exit{opacity:0;transform:perspective(600px) rotateX(90deg);}',
+            '.fs-anim-unfold{transform-origin:top center;}',
+            '.fs-anim-unfold-enter,.fs-anim-unfold-exit{opacity:0;transform:scaleY(0.02);}',
+            '.fs-anim-shift-away-below{opacity:0;transform:translateY(-10px);}',
+            '.fs-anim-shift-away-above{opacity:0;transform:translateY(10px);}',
+            '.fs-anim-shift-away-right{opacity:0;transform:translateX(-10px);}',
+            '.fs-anim-shift-away-left{opacity:0;transform:translateX(10px);}',
+            '.fs-anim-shift-toward-below{opacity:0;transform:translateY(10px);}',
+            '.fs-anim-shift-toward-above{opacity:0;transform:translateY(-10px);}',
+            '.fs-anim-shift-toward-right{opacity:0;transform:translateX(10px);}',
+            '.fs-anim-shift-toward-left{opacity:0;transform:translateX(-10px);}',
         ].join('');
         (document.head || document.documentElement).appendChild(s);
     })();
@@ -141,11 +165,11 @@ const Floater = (() => {
             _backdrop.addEventListener('click', e => {
                 e.stopPropagation();
                 const open = [..._registry.values()].filter(i => i.isOpen && i._activeOpts.modal);
-                if (!open.length || open.some(i => i._activeOpts.blockClicks)) return;
-                const closeable = open.filter(i => !i._activeOpts.protected);
-                if (!closeable.length) return;
-                closeable.sort((a, b) => parseInt(a.el.style.zIndex || 0) - parseInt(b.el.style.zIndex || 0));
-                closeable[closeable.length - 1].close();
+                if (!open.length) return;
+                open.sort((a, b) => (parseInt(a.el.style.zIndex) || 0) - (parseInt(b.el.style.zIndex) || 0));
+                const top = open[open.length - 1];
+                if (top._activeOpts.blockClicks || top._activeOpts.protected) return;
+                top.close();
             });
             (document.body || document.documentElement).appendChild(_backdrop);
         }
@@ -173,6 +197,39 @@ const Floater = (() => {
             inst.el.classList.toggle('fs-focused', inst === top);
             inst.el.classList.toggle('fs-blurred', inst !== top);
         }
+    }
+
+    function _wireToFront(instance) {
+        const toFrontOn = instance.opts.toFrontOn != null ? instance.opts.toFrontOn : 'click';
+        if (toFrontOn !== 'click' && toFrontOn !== 'hover') return;
+        const el = instance.el;
+        el.addEventListener(toFrontOn === 'hover' ? 'mouseenter' : 'click', () => {
+            const cont = _getContainer();
+            if (!cont.contains(el) || !instance.isOpen) return;
+            if (cont.lastElementChild !== el) cont.appendChild(el);
+            const zBoost = (_types[instance._type] && _types[instance._type].zPriority) || 0;
+            el.style.zIndex = String(++_zCounter + zBoost);
+            _updateFocusClasses();
+        });
+    }
+
+    // Floaters live in the fixed container, so an overflow ancestor that clips the anchor does not clip the floater.
+    // Without this a floater keeps rendering beside the box its anchor scrolled out of.
+    function _updateClipState(instance, rect, scrollTargets) {
+        if (instance._activeOpts.hideOnAnchorClip === false) {
+            instance._el.classList.remove('fs-anchor-clipped');
+            return;
+        }
+        let clipped = false;
+        for (const target of scrollTargets) {
+            if (target === window) continue;
+            const box = target.getBoundingClientRect();
+            if (rect.bottom <= box.top || rect.top >= box.bottom || rect.right <= box.left || rect.left >= box.right) {
+                clipped = true;
+                break;
+            }
+        }
+        instance._el.classList.toggle('fs-anchor-clipped', clipped);
     }
 
     // Finds the nearest ancestor that creates a containing block for position:fixed.
@@ -204,6 +261,27 @@ const Floater = (() => {
         return result;
     }
 
+    function _measure(floater, capW) {
+        floater.style.position = 'fixed';
+        floater.style.visibility = 'hidden';
+        floater.style.minWidth = '';
+        floater.style.maxHeight = 'none';
+        floater.style.maxWidth = capW != null ? capW + 'px' : 'none';
+        floater.style.overflowY = '';
+        floater.style.top = '-9999px';
+        floater.style.left = '0';
+        floater.removeAttribute('hidden');
+        const h = floater.scrollHeight;
+        const w = floater.getBoundingClientRect().width;
+        floater.setAttribute('hidden', '');
+        floater.style.visibility = '';
+        floater.style.top = '';
+        floater.style.left = '';
+        floater.style.maxHeight = '';
+        floater.style.maxWidth = '';
+        return { h, w };
+    }
+
     function _position(anchor, floater, opts) {
         opts = opts || {};
         const arrowEl = opts.arrowEl || null;
@@ -216,23 +294,7 @@ const Floater = (() => {
         const minWidth = opts.minWidth != null ? opts.minWidth : null;
         const fitContent = opts.fitContent || false;
 
-        floater.style.position = 'fixed';
-        floater.style.visibility = 'hidden';
-        floater.style.minWidth = '';
-        floater.style.maxHeight = 'none';
-        floater.style.maxWidth = 'none';
-        floater.style.overflowY = '';
-        floater.style.top = '-9999px';
-        floater.style.left = '0';
-        floater.removeAttribute('hidden');
-        const natH = floater.scrollHeight;
-        const natW = floater.offsetWidth;
-        floater.setAttribute('hidden', '');
-        floater.style.visibility = '';
-        floater.style.top = '';
-        floater.style.left = '';
-        floater.style.maxHeight = '';
-        floater.style.maxWidth = '';
+        const { h: natH, w: natW } = _measure(floater, null);
 
         let anchorRect;
         if (anchor && typeof anchor.getBoundingClientRect === 'function') {
@@ -257,7 +319,8 @@ const Floater = (() => {
                 : (spaceLeft < natW && spaceRight > spaceLeft);
             const availW = Math.max(0, openRight ? spaceRight : spaceLeft);
             const actualW = Math.min(natW, availW);
-            const actualH = Math.min(natH, vH - 8);
+            const boxH = actualW < natW ? _measure(floater, actualW).h : natH;
+            const actualH = Math.min(boxH, vH - 8);
 
             let top = centerY
                 ? anchorRect.top + anchorRect.height / 2 - actualH / 2
@@ -275,11 +338,11 @@ const Floater = (() => {
             floater.style.minWidth = (minWidth || 0) + 'px';
             floater.style.maxWidth = actualW + 'px';
             floater.style.maxHeight = actualH + 'px';
-            floater.style.overflowY = natH > actualH ? 'auto' : 'hidden';
+            floater.style.overflowY = boxH > actualH ? 'auto' : 'hidden';
             floater.style.bottom = '';
             if (arrowEl) arrowEl.style.transform = openRight ? 'rotate(0deg)' : 'rotate(180deg)';
             floater.removeAttribute('hidden');
-            return { openBelow: null, openRight, actualH, natH };
+            return { openBelow: null, openRight, actualH, natH: boxH };
         }
 
         const spaceBelow = vH - anchorRect.bottom - gap;
@@ -288,7 +351,9 @@ const Floater = (() => {
             ? (spaceAbove < natH && spaceBelow > spaceAbove)
             : (spaceBelow >= natH || spaceBelow >= spaceAbove);
         const avail = openBelow ? spaceBelow : spaceAbove;
-        const actualH = Math.min(natH, avail);
+        const cappedW = Math.min(natW, vW - 8);
+        const boxH = cappedW < natW ? _measure(floater, cappedW).h : natH;
+        const actualH = Math.min(boxH, avail);
 
         const effectiveMinW = fitContent ? (minWidth || 0) : (minWidth != null ? minWidth : anchorRect.width);
         const layoutW = Math.min(Math.max(natW, effectiveMinW), vW - 8);
@@ -303,7 +368,7 @@ const Floater = (() => {
         floater.style.minWidth = effectiveMinW + 'px';
         floater.style.maxWidth = (vW - 8) + 'px';
         floater.style.maxHeight = actualH + 'px';
-        floater.style.overflowY = natH > avail ? 'auto' : 'hidden';
+        floater.style.overflowY = boxH > avail ? 'auto' : 'hidden';
         floater.style.bottom = '';
 
         if (openBelow) {
@@ -314,7 +379,7 @@ const Floater = (() => {
         if (arrowEl) arrowEl.style.transform = openBelow ? 'rotate(90deg)' : 'rotate(-90deg)';
 
         floater.removeAttribute('hidden');
-        return { openBelow, actualH, natH };
+        return { openBelow, actualH, natH: boxH };
     }
 
     function _unposition(floater, arrowEl) {
@@ -331,13 +396,16 @@ const Floater = (() => {
         if (arrowEl) arrowEl.style.transform = '';
     }
 
-    function _resolveAnim(name) {
+    function _resolveAnim(name, placement) {
         if (!name) return null;
-        if (!_animations[name]) {
+        const anim = _animations[name];
+        if (!anim) {
             _warnOnce(`anim:${name}`, `unknown animation "${name}" - register it with registerAnimation() first`);
             return null;
         }
-        return _animations[name];
+        if (!anim.directional) return anim;
+        const cls = `fs-anim-${name}-${placement || 'below'}`;
+        return { inClass: cls, outClass: cls, duration: anim.duration, easing: anim.easing };
     }
 
     // animateIn/OutDuration/Easing win over the shared animationDuration/Easing when in and out need to differ.
@@ -346,6 +414,7 @@ const Floater = (() => {
         const durationOverride = direction === 'in' ? opts.animateInDuration : opts.animateOutDuration;
         const easingOverride = direction === 'in' ? opts.animateInEasing : opts.animateOutEasing;
         return {
+            baseClass: anim.baseClass,
             inClass: anim.inClass,
             outClass: anim.outClass,
             duration: durationOverride != null ? durationOverride : (opts.animationDuration != null ? opts.animationDuration : anim.duration),
@@ -361,6 +430,7 @@ const Floater = (() => {
         const cls = direction === 'in' ? anim.inClass : anim.outClass;
 
         el.style.transition = 'none';
+        if (anim.baseClass) el.classList.add(anim.baseClass);
         if (direction === 'in') el.classList.add(cls);
         void el.offsetWidth;
 
@@ -370,6 +440,7 @@ const Floater = (() => {
             clearTimeout(fallback);
             cancelAnimationFrame(raf);
             el.style.transition = '';
+            if (anim.baseClass) el.classList.remove(anim.baseClass);
         };
         const onEnd = e => {
             if (e.target !== el) return;
@@ -401,14 +472,16 @@ const Floater = (() => {
             const isPref = pref !== null && v === pref;
             item.classList.toggle('fs-opt-current', isCur);
             item.classList.toggle('fs-opt-preferred', isPref);
-            if (isCur && isPref) {
-                item.title = `${curTitle} - ${prefTitle}`;
-            } else if (isCur) {
-                item.title = curTitle;
-            } else if (isPref) {
-                item.title = prefTitle;
-            } else {
+            let title = null;
+            if (isCur && isPref) title = `${curTitle} - ${prefTitle}`;
+            else if (isCur) title = curTitle;
+            else if (isPref) title = prefTitle;
+            if (title) {
+                item.title = title;
+                item.dataset.fsTitle = '1';
+            } else if (item.dataset.fsTitle) {
                 item.removeAttribute('title');
+                delete item.dataset.fsTitle;
             }
         }
     }
@@ -582,10 +655,8 @@ const Floater = (() => {
         const t = _parseTime(tp || '00:00');
 
         const spinner = document.createElement('div');
-        spinner.className = 'fs-spinner';
+        spinner.className = 'fs-spinner fs-spinner-datetime';
         spinner.dataset.inputType = 'datetime';
-        spinner.style.flexWrap = 'wrap';
-        spinner.style.rowGap = '6px';
 
         _addSpinnerCol(spinner, 'y', dt.y, 1900, 2100, 1, true, showArrows, allowTyping);
         _addSpinnerSep(spinner, '-');
@@ -594,7 +665,7 @@ const Floater = (() => {
         _addSpinnerCol(spinner, 'd', dt.d, 1, 31, 1, false, showArrows, allowTyping);
 
         const spacer = document.createElement('div');
-        spacer.style.cssText = 'width:8px;align-self:center;height:1px;background:rgba(255,255,255,0.12);';
+        spacer.className = 'fs-spinner-gap';
         spinner.appendChild(spacer);
 
         _addSpinnerCol(spinner, 'h', t.h, 0, 23, 1, false, showArrows, allowTyping);
@@ -746,8 +817,10 @@ const Floater = (() => {
         return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     }
 
+    const _escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
     function _escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        return String(s).replace(/[&<>"']/g, c => _escapeMap[c]);
     }
 
     function _log(level, msg, data) {
@@ -821,6 +894,7 @@ const Floater = (() => {
             this._openOpts = null;
             this._blockingScroll = false;
             this._animCancel = null;
+            this._placement = null;
             this._pendingFinish = null;
             this._wasHidden = false;
         }
@@ -898,7 +972,9 @@ const Floater = (() => {
             const zBoost = (_types[this._type] && _types[this._type].zPriority) || 0;
             this._el.style.zIndex = String(++_zCounter + zBoost);
             if (anchor instanceof Element && !anchor.isConnected) _log('info', `floater "${this._id}" opened with a detached anchor`, { anchor });
-            _position(anchor, this._el, merged);
+            this._el.classList.remove('fs-anchor-clipped');
+            const placed = _position(anchor, this._el, merged);
+            this._placement = placed.openBelow === null ? (placed.openRight ? 'right' : 'left') : (placed.openBelow ? 'below' : 'above');
             this._isOpen = true;
             if (!wasOpen) _openCount++;
 
@@ -925,24 +1001,27 @@ const Floater = (() => {
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
                 } else if (anchor && typeof anchor.getBoundingClientRect === 'function') {
                     const openRect = anchor.getBoundingClientRect();
-                    const openScrolls = scrollTargets.map(t => t === window ? window.scrollY : t.scrollTop);
+                    const openScrolls = scrollTargets.map(t => t === window ? [window.scrollX, window.scrollY] : [t.scrollLeft, t.scrollTop]);
                     const onScroll = () => {
                         if (!this._isOpen) return;
-                        if (this._openAnchor.isConnected) {
-                            _position(this._openAnchor, this._el, this._openOpts || {});
-                            return;
-                        }
-                        let vertDelta = 0;
-                        scrollTargets.forEach((t, i) => {
-                            vertDelta += (t === window ? window.scrollY : t.scrollTop) - openScrolls[i];
-                        });
-                        _position({
-                            getBoundingClientRect: () => ({
+                        let follow = this._openAnchor;
+                        if (!follow.isConnected) {
+                            let vertDelta = 0;
+                            let horizDelta = 0;
+                            scrollTargets.forEach((t, i) => {
+                                const [x, y] = t === window ? [window.scrollX, window.scrollY] : [t.scrollLeft, t.scrollTop];
+                                horizDelta += x - openScrolls[i][0];
+                                vertDelta += y - openScrolls[i][1];
+                            });
+                            const rect = {
                                 top: openRect.top - vertDelta, bottom: openRect.bottom - vertDelta,
-                                left: openRect.left, right: openRect.right,
+                                left: openRect.left - horizDelta, right: openRect.right - horizDelta,
                                 width: openRect.width, height: openRect.height,
-                            }),
-                        }, this._el, this._openOpts || {});
+                            };
+                            follow = { getBoundingClientRect: () => rect };
+                        }
+                        _position(follow, this._el, this._openOpts || {});
+                        _updateClipState(this, follow.getBoundingClientRect(), scrollTargets);
                     };
                     for (const target of scrollTargets) target.addEventListener('scroll', onScroll, { passive: true });
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
@@ -951,7 +1030,7 @@ const Floater = (() => {
 
             _updateFocusClasses();
             this.emit('show', { anchor, opts: merged, trigger });
-            const inAnim = _effectiveAnim(_resolveAnim(merged.animateIn), merged, 'in');
+            const inAnim = _effectiveAnim(_resolveAnim(merged.animateIn, this._placement), merged, 'in');
             if (inAnim) {
                 this._animCancel = _animate(this._el, inAnim, 'in', () => {
                     this._animCancel = null;
@@ -1001,7 +1080,7 @@ const Floater = (() => {
 
             if (this._animCancel) { this._animCancel(); this._animCancel = null; }
             this.emit('hide', { opts: merged, trigger });
-            const outAnim = _effectiveAnim(_resolveAnim(merged.animateOut), merged, 'out');
+            const outAnim = _effectiveAnim(_resolveAnim(merged.animateOut, this._placement), merged, 'out');
             if (outAnim) {
                 this._pendingFinish = finish;
                 this._animCancel = _animate(this._el, outAnim, 'out', () => {
@@ -1058,8 +1137,15 @@ const Floater = (() => {
         _addCleanup(fn) { this._cleanups.push(fn); }
     }
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', e => {
         if (_openCount === 0) return;
+        // Types stop propagation from inside their own content, but an attach()ed floater has no type and no such listener.
+        // Without the containment check a click inside one would fall through to here and close it.
+        const inside = [..._registry.values()].find(i => i.isOpen && i.el.contains(e.target));
+        if (inside) {
+            _closeOnClickOutside(inside);
+            return;
+        }
         for (const instance of _registry.values()) {
             if (!instance.isOpen) continue;
             if (instance._activeOpts.modal || instance._activeOpts.persistOnOutsideClick || instance._activeOpts.protected || instance._activeOpts.closeOnOutsideClick === false) continue;
@@ -1367,7 +1453,7 @@ const Floater = (() => {
             if (!opts.sliders) return;
             for (const s of opts.sliders) {
                 if (!s.name || s.value == null) continue;
-                const input = instance.el.querySelector(`.fs-slider-input[data-name="${s.name}"]`);
+                const input = instance.el.querySelector(`.fs-slider-input[data-name="${CSS.escape(s.name)}"]`);
                 if (!input) continue;
                 input.value = s.value;
                 const valDisplay = input.closest('.fs-slider-row')?.querySelector('.fs-slider-value');
@@ -1514,14 +1600,14 @@ const Floater = (() => {
             if (!opts.inputs) return;
             for (const field of opts.inputs) {
                 if (!field.name) continue;
-                const subEl = instance.el.querySelector(`[data-fs-subtype][data-fs-name="${field.name}"]`);
+                const subEl = instance.el.querySelector(`[data-fs-subtype][data-fs-name="${CSS.escape(field.name)}"]`);
                 if (subEl) {
                     const type = subEl.dataset.fsSubtype;
                     const sub = subEl._fsSubInstance;
                     if (sub && _types[type]?.onUpdate) { Object.assign(sub.opts, field); _types[type].onUpdate(sub, field); }
                     continue;
                 }
-                const el = instance.el.querySelector(`[data-name="${field.name}"]`);
+                const el = instance.el.querySelector(`[data-name="${CSS.escape(field.name)}"]`);
                 if (!el || field.value == null) continue;
                 if (el.type === 'checkbox') el.checked = !!field.value;
                 else el.value = field.value;
@@ -1733,14 +1819,17 @@ const Floater = (() => {
                 const el = document.createElement(tag);
                 el.src = url;
                 if (detectedMedia !== 'image') { el.controls = true; }
-                el.style.maxWidth = '100%';
                 const content = _content(instance.el);
                 content.innerHTML = '';
                 const wrap = document.createElement('div');
                 wrap.className = 'fs-fetch-content';
                 wrap.appendChild(el);
                 content.appendChild(wrap);
-                const onMediaReady = () => { _reposition(); instance.emit('loaded', { url }); };
+                const onMediaReady = () => {
+                    if (!instance.isOpen || token !== instance._fetchToken) return;
+                    _reposition();
+                    instance.emit('loaded', { url });
+                };
                 el.addEventListener('load', onMediaReady);
                 el.addEventListener('loadedmetadata', onMediaReady);
                 el.addEventListener('error', () => handleError(new Error(`Failed to load ${detectedMedia}`)));
@@ -1758,11 +1847,11 @@ const Floater = (() => {
                     try { html = `<pre>${_escapeHtml(JSON.stringify(JSON.parse(text), null, 2))}</pre>`; }
                     catch { html = `<pre>${_escapeHtml(text)}</pre>`; }
                 } else if (ct.startsWith('image/') || respType === 'image') {
-                    html = `<img src="${_escapeHtml(url)}" style="max-width:100%;display:block;" />`;
+                    html = `<img src="${_escapeHtml(url)}" />`;
                 } else if (ct.startsWith('video/') || respType === 'video') {
-                    html = `<video src="${_escapeHtml(url)}" controls style="max-width:100%;"></video>`;
+                    html = `<video src="${_escapeHtml(url)}" controls></video>`;
                 } else if (ct.startsWith('audio/') || respType === 'audio') {
-                    html = `<audio src="${_escapeHtml(url)}" controls style="width:100%;"></audio>`;
+                    html = `<audio src="${_escapeHtml(url)}" controls></audio>`;
                 } else {
                     html = `<pre>${_escapeHtml(text.slice(0, 3000))}</pre>`;
                 }
@@ -2008,6 +2097,9 @@ const Floater = (() => {
             return content;
         },
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
+        onOpen(instance, anchor, merged) {
+            if (!('persistOnOutsideClick' in merged)) merged.persistOnOutsideClick = true;
+        },
         onUpdate(instance, opts) { if (opts.content != null) _content(instance.el).innerHTML = opts.content; },
     };
 
@@ -2018,6 +2110,9 @@ const Floater = (() => {
             return content;
         },
         init(instance) { instance.el.addEventListener('click', e => e.stopPropagation()); },
+        onOpen(instance, anchor, merged) {
+            if (!('modal' in merged)) merged.modal = true;
+        },
         onUpdate(instance, opts) { if (opts.content != null) _content(instance.el).innerHTML = opts.content; },
     };
 
@@ -2049,18 +2144,7 @@ const Floater = (() => {
             if (opts.currentValue != null || opts.preferenceValue != null) _applyMarkers(el, opts);
             if (opts.closeButton) _addCloseButton(instance);
             instance.emit('create', {});
-            const toFrontOn = opts.toFrontOn != null ? opts.toFrontOn : 'click';
-            if (toFrontOn === 'click' || toFrontOn === 'hover') {
-                const evt = toFrontOn === 'hover' ? 'mouseenter' : 'click';
-                el.addEventListener(evt, () => {
-                    const cont = _getContainer();
-                    if (!cont.contains(el) || !instance.isOpen) return;
-                    if (cont.lastElementChild !== el) cont.appendChild(el);
-                    const zBoost = (_types[instance._type] && _types[instance._type].zPriority) || 0;
-                    el.style.zIndex = String(++_zCounter + zBoost);
-                    _updateFocusClasses();
-                });
-            }
+            _wireToFront(instance);
             return instance;
         },
 
@@ -2086,6 +2170,7 @@ const Floater = (() => {
             if (opts.currentValue != null || opts.preferenceValue != null) _applyMarkers(wrapper, opts);
             if (opts.closeButton) _addCloseButton(instance);
             instance.emit('create', {});
+            _wireToFront(instance);
             return instance;
         },
 
@@ -2286,7 +2371,7 @@ const Floater = (() => {
                 _warn(`bind: unknown trigger "${trigger}"`);
             }
 
-            if (cleanup) instance._addCleanup(cleanup);
+            const cleanups = cleanup ? [cleanup] : [];
 
             if (opts.scrollSelect) {
                 const cb = typeof opts.scrollSelect === 'function' ? opts.scrollSelect : null;
@@ -2303,13 +2388,15 @@ const Floater = (() => {
                 };
                 anchor.addEventListener('wheel', onWheel, { passive: false });
                 instance.el.addEventListener('wheel', onWheel, { passive: false });
-                instance._addCleanup(() => {
+                cleanups.push(() => {
                     anchor.removeEventListener('wheel', onWheel);
                     instance.el.removeEventListener('wheel', onWheel);
                 });
             }
 
-            return cleanup;
+            const cleanupAll = () => { for (const fn of cleanups) fn(); };
+            instance._addCleanup(cleanupAll);
+            return cleanupAll;
         },
 
         setDefaults(typeOrOpts, opts) {
