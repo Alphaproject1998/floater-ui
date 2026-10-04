@@ -26,7 +26,7 @@ npm install floater-ui
 
 **CDN**
 ```html
-<script src="https://unpkg.com/floater-ui@0.2.2/floater.js"></script>
+<script src="https://unpkg.com/floater-ui@0.2.3/floater.js"></script>
 ```
 
 **Manual** - download `floater.js` and include it directly:
@@ -70,8 +70,8 @@ That's a working dropdown: positioned against the button, flips when near the vi
 | `audio` | Audio player |
 | `video` | Video player |
 | `image` | Image viewer |
-| `persist` | Persistent panel - stays open until explicitly closed |
-| `modal` | Modal with backdrop |
+| `persist` | Persistent panel - stays open until explicitly closed; implies `persistOnOutsideClick` |
+| `modal` | Modal with backdrop; implies `modal: true` |
 | `context-menu` | Right-click context menu with icons, shortcuts, separators |
 
 ## API
@@ -298,6 +298,7 @@ Positioning is viewport-aware: the floater flips to the other side when space ru
 | `protected` | Same immunity as `modal` but no backdrop; Escape ignored |
 | `closeOnOutsideClick: false` | Outside clicks don't close, but scroll still repositions |
 | `closeOnScroll: true` | Closes on scroll instead of repositioning |
+| `hideOnAnchorClip: false` | Keeps the floater rendering after its anchor scrolls out of a clipping ancestor; by default it hides until the anchor scrolls back |
 | `closeOthers: false` | Don't close other floaters when this one opens |
 | `closeOthersImmune` | Skip this floater when another floater's `closeOthers` runs |
 | `closeOnFloaterClick: false` | Stay open when a click lands inside a different floater |

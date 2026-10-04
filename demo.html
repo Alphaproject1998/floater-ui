@@ -1126,18 +1126,23 @@
 <!-- ═══ 20. toFrontOn - z-index stacking ════════════════════════════════ -->
 <div class="section">
     <h2>20. toFrontOn - z-index stacking</h2>
-    <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">All three open on the same anchor with <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOthers: false</code> so they overlap. Each has a different size. Click/hover inside each to test bring-to-front behaviour. Pressing Esc closes the topmost (highest z-index) first, not the oldest.</p>
+    <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">All four open on their own anchor with <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">closeOthers: false</code> so they overlap. Each has a different size. Click/hover inside each to test bring-to-front behaviour. Pressing Esc closes the topmost (highest z-index) first, not the oldest.</p>
     <div class="demo-row">
 
         <div class="card">
-            <div class="card-label">3 close anchors, 1 callsite - floaters overlap for z-stack test</div>
+            <div class="card-label">4 close anchors, 1 callsite - floaters overlap for z-stack test</div>
             <div style="display:flex;gap:3px;margin-bottom:6px;">
                 <div id="tfr-anchor-a" style="flex:1;padding:5px 2px;border:1px dashed rgba(70,120,220,0.4);border-radius:4px;font-size:10px;color:rgba(70,120,220,0.7);text-align:center;">click</div>
                 <div id="tfr-anchor-b" style="flex:1;padding:5px 2px;border:1px dashed rgba(70,180,120,0.4);border-radius:4px;font-size:10px;color:rgba(70,180,120,0.7);text-align:center;">hover</div>
                 <div id="tfr-anchor-c" style="flex:1;padding:5px 2px;border:1px dashed rgba(180,100,70,0.4);border-radius:4px;font-size:10px;color:rgba(180,100,70,0.7);text-align:center;">none</div>
+                <div id="tfr-anchor-d" style="flex:1;padding:5px 2px;border:1px dashed rgba(170,120,220,0.4);border-radius:4px;font-size:10px;color:rgba(170,120,220,0.7);text-align:center;">attached</div>
+            </div>
+            <div id="tfr-attached-el" hidden style="padding:14px 18px;min-width:250px;background:rgba(170,120,220,0.25);">
+                <strong style="font-size:12px;">attach() + toFrontOn: 'click'</strong><br>
+                <small style="color:rgba(255,255,255,0.4);">click &rarr; front</small>
             </div>
             <div class="btn-row">
-                <button class="btn btn-blue" id="tfr-open-all">Open all 3</button>
+                <button class="btn btn-blue" id="tfr-open-all">Open all 4</button>
                 <button class="btn btn-red" id="tfr-close-all">Close all</button>
             </div>
         </div>
@@ -1174,6 +1179,27 @@
             <button class="btn" id="scroll-modal-btn">Open modal</button>
             <button class="btn btn-red" id="scroll-modal-close">Close</button>
             <div class="out" id="scroll-modal-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">detached anchor - the floater follows the scroll deltas on both axes</div>
+            <div id="scroll-detach-box" style="width:240px;height:110px;overflow:auto;border:1px dashed rgba(255,255,255,0.2);border-radius:4px;">
+                <div style="width:1400px;height:600px;position:relative;">
+                    <button class="btn" id="scroll-detach-anchor" style="position:absolute;top:280px;left:560px;">anchor</button>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn" id="scroll-detach-left">&larr;</button>
+                <button class="btn" id="scroll-detach-right">&rarr;</button>
+                <button class="btn" id="scroll-detach-up">&uarr;</button>
+                <button class="btn" id="scroll-detach-down">&darr;</button>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-blue" id="scroll-detach-btn">Open, then detach</button>
+                <button class="btn" id="scroll-detach-keep-btn">Open, no clip hide</button>
+                <button class="btn btn-red" id="scroll-detach-reset">Reset</button>
+            </div>
+            <div class="out" id="scroll-detach-out">—</div>
         </div>
 
     </div>
@@ -2017,7 +2043,6 @@
 
     const attCustomEl = document.getElementById('att-custom-el');
     const attCustom = Floater.attach('att-custom', attCustomEl, {});
-    attCustomEl.addEventListener('click', e => e.stopPropagation());
     Floater.bind(document.getElementById('att-custom-btn'), attCustom, { trigger: 'click' });
 
     // ── 10. Advanced options ───────────────────────────────────────────────
@@ -2435,7 +2460,6 @@
 
     const persistF = Floater.create('persist-f', 'persist', {
         content: '<div style="padding:12px 16px;max-width:240px;font-size:12px;">This floater ignores outside clicks. Use the "Close it" button or press Escape.</div>',
-        persistOnOutsideClick: true,
         preferAbove: true,
     });
     persistF.on('show', () => { document.getElementById('persist-out').innerHTML = `<span>open</span>`; });
@@ -2528,7 +2552,6 @@
     // ── 16. Modal ──────────────────────────────────────────────────────────
 
     const modalF = Floater.create('modal-f', 'modal', {
-        modal: true,
         protected: true,
         fitContent: true,
         content: (() => {
@@ -2562,7 +2585,6 @@
     });
 
     const modalScrollF = Floater.create('modal-scroll-f', 'modal', {
-        modal: true,
         blockScroll: true,
         content: `<div style="padding:16px 20px;min-width:240px;max-width:300px;">
             <p style="font-size:13px;font-weight:500;margin-bottom:6px;">Scroll is locked</p>
@@ -2582,7 +2604,6 @@
     });
 
     const modalBackdropF = Floater.create('modal-backdrop-f', 'modal', {
-        modal: true,
         blockClicks: true,
         content: `<div style="padding:16px 20px;min-width:240px;max-width:300px;">
             <p style="font-size:13px;font-weight:500;margin-bottom:6px;">Clicks are blocked</p>
@@ -2842,13 +2863,20 @@
             toFrontOn: def.mode,
         });
     }
+    const tfrAttached = Floater.attach('tfr-attached', document.getElementById('tfr-attached-el'), {
+        closeOthers: false,
+        persistOnOutsideClick: true,
+        toFrontOn: 'click',
+    });
     document.getElementById('tfr-open-all').addEventListener('click', e => {
         e.stopPropagation();
         for (const def of tfrDefs) Floater.get(def.id)?.open(document.getElementById(def.anchorId), { closeOthers: false, preferAbove: true });
+        tfrAttached.open(document.getElementById('tfr-anchor-d'), { closeOthers: false, preferAbove: true });
     });
     document.getElementById('tfr-close-all').addEventListener('click', e => {
         e.stopPropagation();
         for (const def of tfrDefs) Floater.get(def.id)?.close();
+        tfrAttached.close();
     });
 
     // ── 21. Scroll behaviour ──────────────────────────────────────────────
@@ -2925,6 +2953,49 @@
     const sideCY = Floater.create('side-cy', 'dropdown', { items: SIDE_ITEMS, fitContent: true, preferRight: true, centerY: true });
     sideCY.on('change', ({ label }) => { document.getElementById('side-cy-out').innerHTML = `<span>${label}</span>`; });
     Floater.bind(document.getElementById('side-cy-btn'), sideCY, { trigger: 'click', arrowEl: document.getElementById('side-cy-arrow') });
+
+    const scrollDetach = Floater.create('scroll-detach', 'popover', {
+        content: '<div style="padding:10px 14px;min-width:180px;">The anchor is gone<br><small style="color:rgba(255,255,255,0.35);">position comes from the scroll deltas</small></div>',
+        persistOnOutsideClick: true,
+    });
+    const scrollDetachBox = document.getElementById('scroll-detach-box');
+    const scrollDetachAnchor = document.getElementById('scroll-detach-anchor');
+    const scrollDetachHome = scrollDetachAnchor.parentNode;
+    const scrollDetachOut = document.getElementById('scroll-detach-out');
+    const centreOnAnchor = () => {
+        scrollDetachBox.scrollLeft = scrollDetachAnchor.offsetLeft - (scrollDetachBox.clientWidth - scrollDetachAnchor.offsetWidth) / 2;
+        scrollDetachBox.scrollTop = scrollDetachAnchor.offsetTop - (scrollDetachBox.clientHeight - scrollDetachAnchor.offsetHeight) / 2;
+    };
+    centreOnAnchor();
+    const openDetached = openOpts => {
+        if (!scrollDetachAnchor.isConnected) scrollDetachHome.appendChild(scrollDetachAnchor);
+        centreOnAnchor();
+        scrollDetach.open(scrollDetachAnchor, openOpts);
+        scrollDetachAnchor.remove();
+    };
+    document.getElementById('scroll-detach-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        openDetached();
+        scrollDetachOut.innerHTML = '<span style="color:#69c769;">open - scroll either way, it hides once the anchor leaves the box</span>';
+    });
+    document.getElementById('scroll-detach-keep-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        openDetached({ hideOnAnchorClip: false });
+        scrollDetachOut.innerHTML = '<span style="color:#e0a33e;">open - hideOnAnchorClip: false, it keeps rendering outside the box</span>';
+    });
+    for (const [id, dx, dy] of [['left', -60, 0], ['right', 60, 0], ['up', 0, -40], ['down', 0, 40]]) {
+        document.getElementById(`scroll-detach-${id}`).addEventListener('click', e => {
+            e.stopPropagation();
+            scrollDetachBox.scrollBy(dx, dy);
+        });
+    }
+    document.getElementById('scroll-detach-reset').addEventListener('click', e => {
+        e.stopPropagation();
+        scrollDetach.close();
+        if (!scrollDetachAnchor.isConnected) scrollDetachHome.appendChild(scrollDetachAnchor);
+        centreOnAnchor();
+        scrollDetachOut.innerHTML = '<span>reset</span>';
+    });
 
     // ── 22. Press trigger + scroll select ─────────────────────────────────
 
