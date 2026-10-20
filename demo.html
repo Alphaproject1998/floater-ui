@@ -250,6 +250,10 @@
             right: 6px;
         }
 
+        #cp-input {
+            border-left: 18px solid var(--fs-color, transparent);
+        }
+
         /* Color swatch */
         .swatch {
             display: inline-block;
@@ -1197,6 +1201,8 @@
             <div class="btn-row">
                 <button class="btn btn-blue" id="scroll-detach-btn">Open, then detach</button>
                 <button class="btn" id="scroll-detach-keep-btn">Open, no clip hide</button>
+                <button class="btn" id="scroll-detach-bound-btn">Open, boundary: 'clip'</button>
+                <button class="btn" id="scroll-detach-bound-keep-btn">Clip, no hide</button>
                 <button class="btn btn-red" id="scroll-detach-reset">Reset</button>
             </div>
             <div class="out" id="scroll-detach-out">—</div>
@@ -1430,9 +1436,73 @@
 
 <hr>
 
-<!-- ═══ 26. Events log ══════════════════════════════════════════════════ -->
+<!-- ═══ 26. Colour picker ═══════════════════════════════════════════════ -->
 <div class="section">
-    <h2>26. Events - all instances, plus warnings &amp; errors</h2>
+    <h2>26. Colour picker - color type</h2>
+    <div class="demo-row">
+
+        <div class="card">
+            <div class="card-label">Defaults - no opts at all</div>
+            <div class="btn-row" style="align-items:center;">
+                <button class="btn" id="cp-basic-btn">Pick colour <span class="arrow">▶</span></button>
+                <span class="swatch" id="cp-basic-swatch" style="background:#ff0000;"></span>
+            </div>
+            <div class="out" id="cp-basic-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Bound to a text input - reads it on open, writes back, follows typing; anchorVar drives the thumbnail</div>
+            <input type="text" class="test-input" id="cp-input" value="#3b82f6" style="width:150px;--fs-color:#3b82f6;">
+            <div class="out" id="cp-input-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">Everything on - swatches, recent, formatToggle, eyedropper (Chromium), Clear / Done</div>
+            <div class="btn-row" style="align-items:center;">
+                <button class="btn" id="cp-full-btn">Open full picker <span class="arrow">▶</span></button>
+                <span class="swatch" id="cp-full-swatch" style="background:rgba(136, 68, 255, 0.8);"></span>
+            </div>
+            <div class="out" id="cp-full-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">swatchesOnly + press trigger - hold, drag over a swatch, release</div>
+            <div class="btn-row" style="align-items:center;">
+                <button class="btn" id="cp-swatch-btn">Hold to pick</button>
+                <span class="swatch" id="cp-swatch-swatch" style="background:#4488ff;"></span>
+            </div>
+            <div class="out" id="cp-swatch-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">format: 'hsl', alpha: false, changeOn + inputOn: 'close' - silent while open, one input and one change per visit; Esc reverts</div>
+            <button class="btn" id="cp-close-btn">Pick colour <span class="arrow">▶</span></button>
+            <div class="out" id="cp-close-out">—</div>
+        </div>
+
+        <div class="card">
+            <div class="card-label">scrollSelect - wheel over the button, open or closed; auto follows the control under the pointer; Shift for big steps; hue 10, the rest 5</div>
+            <div class="btn-row" style="align-items:center;">
+                <button class="btn" id="cp-scroll-btn">Scroll or click</button>
+                <span class="swatch" id="cp-scroll-swatch" style="background:#22cc88;"></span>
+            </div>
+            <div class="btn-row" id="cp-scroll-channels">
+                <button class="btn" data-channel="auto">auto</button>
+                <button class="btn" data-channel="hue">hue</button>
+                <button class="btn" data-channel="saturation">saturation</button>
+                <button class="btn" data-channel="brightness">brightness</button>
+                <button class="btn" data-channel="lightness">lightness</button>
+                <button class="btn" data-channel="alpha">alpha</button>
+            </div>
+            <div class="out" id="cp-scroll-out">—</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ 27. Events log ══════════════════════════════════════════════════ -->
+<div class="section">
+    <h2>27. Events - all instances, plus warnings &amp; errors</h2>
     <div class="log-bar">
         <button class="btn" id="log-clear">Clear</button>
         <label><input type="checkbox" id="log-verbose" checked> Verbose data</label>
@@ -2983,6 +3053,16 @@
         openDetached({ hideOnAnchorClip: false });
         scrollDetachOut.innerHTML = '<span style="color:#e0a33e;">open - hideOnAnchorClip: false, it keeps rendering outside the box</span>';
     });
+    document.getElementById('scroll-detach-bound-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        openDetached({ boundary: 'clip' });
+        scrollDetachOut.innerHTML = '<span style="color:#69c769;">open - boundary: \'clip\', it shifts and shrinks to stay inside the box, hides once the anchor has left</span>';
+    });
+    document.getElementById('scroll-detach-bound-keep-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        openDetached({ boundary: 'clip', hideOnAnchorClip: false });
+        scrollDetachOut.innerHTML = '<span style="color:#e0a33e;">open - boundary: \'clip\' + hideOnAnchorClip: false, it stays pinned inside the box wherever the anchor goes</span>';
+    });
     for (const [id, dx, dy] of [['left', -60, 0], ['right', 60, 0], ['up', 0, -40], ['down', 0, 40]]) {
         document.getElementById(`scroll-detach-${id}`).addEventListener('click', e => {
             e.stopPropagation();
@@ -3324,6 +3404,74 @@
     const diagFetchF = Floater.create('diag-fetch-f', 'fetch', {});
     diagFetchF.on('show', () => { document.getElementById('diag-fetch-out').innerHTML = '<span>warn logged - error panel shown</span>'; });
     Floater.bind(document.getElementById('diag-fetch-btn'), diagFetchF, { trigger: 'click' });
+
+    // ── 26. Colour picker ─────────────────────────────────────────────────
+
+    const cpOut = (id, { value, source }) => {
+        document.getElementById(id).innerHTML = `<span>${value || '(cleared)'}</span> via ${source}`;
+    };
+
+    const cpBasic = Floater.create('cp-basic', 'color');
+    cpBasic.on('input', ({ value }) => { document.getElementById('cp-basic-swatch').style.background = value; });
+    cpBasic.on('change', data => cpOut('cp-basic-out', data));
+    Floater.bind(document.getElementById('cp-basic-btn'), cpBasic, { trigger: 'click' });
+
+    const cpInput = Floater.create('cp-input-f', 'color', { anchorVar: '--fs-color' });
+    cpInput.on('change', data => cpOut('cp-input-out', data));
+    Floater.bind(document.getElementById('cp-input'), cpInput, { trigger: 'focus' });
+
+    const cpFull = Floater.create('cp-full', 'color', {
+        value: 'rgba(136, 68, 255, 0.8)',
+        format: 'auto',
+        formatToggle: true,
+        eyedropper: true,
+        swatches: [
+            '#ff4444', '#ff8844', '#ffcc44', '#88cc44', '#44cc88', '#44cccc', '#4488ff', '#8844ff',
+            { value: 'rgba(255, 255, 255, 0.5)', label: 'Half white' },
+            { value: 'rebeccapurple', label: 'rebeccapurple' },
+        ],
+        recent: 6,
+        recentKey: 'floater-demo-recent-colours',
+        clearButton: true,
+        doneButton: true,
+        selectInput: true,
+    });
+    cpFull.on('input', ({ value }) => { document.getElementById('cp-full-swatch').style.background = value || 'none'; });
+    cpFull.on('change', data => cpOut('cp-full-out', data));
+    Floater.bind(document.getElementById('cp-full-btn'), cpFull, { trigger: 'click' });
+
+    const cpSwatch = Floater.create('cp-swatch', 'color', {
+        value: '#4488ff',
+        swatchesOnly: true,
+        swatches: PALETTE,
+    });
+    cpSwatch.on('change', data => {
+        document.getElementById('cp-swatch-swatch').style.background = data.value;
+        cpOut('cp-swatch-out', data);
+    });
+    Floater.bind(document.getElementById('cp-swatch-btn'), cpSwatch, { trigger: 'press' });
+
+    const cpClose = Floater.create('cp-close', 'color', {
+        value: 'hsl(28, 90%, 55%)',
+        format: 'hsl',
+        alpha: false,
+        changeOn: 'close',
+        inputOn: 'close',
+    });
+    cpClose.on('change', data => cpOut('cp-close-out', data));
+    Floater.bind(document.getElementById('cp-close-btn'), cpClose, { trigger: 'click' });
+
+    // const cpScroll = Floater.create('cp-scroll', 'color', { value: '#22cc88', scrollStep: 10 });
+    const cpScroll = Floater.create('cp-scroll', 'color', { value: '#22cc88', scrollStep: { hue: 10 } });
+    cpScroll.on('input', ({ value }) => { document.getElementById('cp-scroll-swatch').style.background = value; });
+    cpScroll.on('change', data => cpOut('cp-scroll-out', data));
+    Floater.bind(document.getElementById('cp-scroll-btn'), cpScroll, { trigger: 'click', scrollSelect: true });
+    document.getElementById('cp-scroll-channels').addEventListener('click', e => {
+        const btn = e.target.closest('[data-channel]');
+        if (!btn) return;
+        cpScroll.update({ scrollChannel: btn.dataset.channel });
+        document.getElementById('cp-scroll-out').innerHTML = `scrollChannel: <span>${btn.dataset.channel}</span>`;
+    });
 
     // ── 18. setDefaults() ─────────────────────────────────────────────────
     // These calls are last so all earlier demo floaters are unaffected.

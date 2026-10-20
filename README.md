@@ -26,7 +26,7 @@ npm install floater-ui
 
 **CDN**
 ```html
-<script src="https://unpkg.com/floater-ui@0.2.3/floater.js"></script>
+<script src="https://unpkg.com/floater-ui@0.2.4/floater.js"></script>
 ```
 
 **Manual** - download `floater.js` and include it directly:
@@ -70,6 +70,7 @@ That's a working dropdown: positioned against the button, flips when near the vi
 | `audio` | Audio player |
 | `video` | Video player |
 | `image` | Image viewer |
+| `color` | Colour picker: saturation/brightness area, hue and opacity sliders, text field, swatches, recent colours |
 | `persist` | Persistent panel - stays open until explicitly closed; implies `persistOnOutsideClick` |
 | `modal` | Modal with backdrop; implies `modal: true` |
 | `context-menu` | Right-click context menu with icons, shortcuts, separators |
@@ -210,6 +211,10 @@ Closes the floater. No-op if already closed.
 
 Opens if closed, closes if open.
 
+#### `instance.reposition()`
+
+Re-fits an open floater against the anchor and opts it was opened with, for when its content has changed size. Emits nothing, replays no animation and keeps the floater's scroll position. No-op while closed. Chainable.
+
 #### `instance.update(opts)`
 
 Merges `opts` into the instance opts and calls the type's `onUpdate` hook; built-in types rebuild their content when you pass new `items`/`presets`/`value` etc. Marker highlights are reapplied automatically after a rebuild. Chainable.
@@ -249,6 +254,7 @@ Type-specific events:
 |---|---|---|
 | `change` | Value selected/changed | `{ value, ... }` (type-dependent) |
 | `input` | Field input in `input-group` | `{ name, value, type, el }` |
+| `input` | Live colour while dragging or typing in `color` | `{ value, hex, color, format, source }` |
 | `loaded` | Content loaded (`fetch`/`image`) | `{ url }` or `{ src }` |
 | `error` | Load error (`fetch`/`image`) | `{ url/src, error }` |
 | `timeupdate` | Playback progress (`audio`/`video`) | `{ currentTime, duration }` |
@@ -282,8 +288,12 @@ These can be passed to `create()`, `attach()`, `setDefaults()`, or per-call to `
 | `minWidth` | anchor width | Minimum width in px |
 | `fitContent` | `false` | Size to content instead of matching the anchor width |
 | `arrowEl` | - | An element to rotate to point at the floater (e.g. a ▶ in the anchor) |
+| `boundary` | `'viewport'` | What the floater has to stay inside. `'clip'` uses the anchor's scrollable ancestors, so a floater in a scroll box shifts and shrinks to stay within it instead of spilling over the edge; an element or array of elements names the box yourself |
+| `boundaryMinSize` | `24` | With a `boundary`, the floater hides rather than shrink below this many px |
 
 Positioning is viewport-aware: the floater flips to the other side when space runs out, gets capped and scrollable when taller than the viewport, and accounts for ancestor `transform`/`filter`/`backdrop-filter` that would otherwise break `position: fixed`.
+
+**Boundary:** floaters render in a fixed container at body level, so by default nothing but the viewport limits them and one anchored inside a small scroll box can overhang it. That is usually what you want for a dropdown in a cramped panel. `boundary: 'clip'` is for the opposite case: it stays inside the box, and hides when the box has no room for it. `hideOnAnchorClip` still applies, so with it off the floater stays pinned inside the box after its anchor has scrolled away.
 
 **Scroll behaviour:** by default an open floater follows its anchor as the page (or any scrollable ancestor) scrolls, even if the anchor is removed from the DOM mid-scroll. Set `closeOnScroll: true` to close instead. `modal` and `protected` floaters ignore scroll entirely.
 
@@ -347,6 +357,7 @@ The essentials per type; see the [demo](https://alphaproject1998.github.io/float
 | `fetch` | `url`, `fetchMethod: 'fetch' \| 'xhr'`, `responseType: 'auto' \| 'json' \| 'image' \| 'video' \| 'audio'`, `transform(text, contentType)` |
 | `audio` / `video` | `src`, `autoplay`, `rememberProgress`, `resetOnOpen`, `resetOnClose` (+ `poster`, `muted`, `width` for video) |
 | `image` | `src`, `alt`, `caption`, `width` |
+| `color` | see [Colour picker](#colour-picker) |
 | `context-menu` | `items: [{ value, label, icon?, shortcut?, danger?, disabled? } \| { separator: true }]`, `global: true` to take over right-click for the whole page, `excludeSelectors` |
 
 Notes:
@@ -354,6 +365,55 @@ Notes:
 - The date/time spinners include an invisible native input, so the platform's own calendar/clock picker is one tap away (`showPicker`), and columns support typing, arrow buttons, and scroll-wheel changes with proper carry (minutes roll hours, month lengths respected).
 - `fetch` escapes text responses before rendering; only your own `transform` output is treated as trusted HTML. Load failures render an error panel and emit `error`.
 - `input-group` nests other floater types as form fields; their events are re-emitted through the parent with `name` and `subType` attached.
+
+### Colour picker
+
+`Floater.create(id, 'color')` with no opts is a complete picker: drag the area, slide hue and opacity, or type any colour the browser understands (`#rgb`, `rgb()`, `hsl()`, `hwb()`, names). Everything else is opt-in.
+
+```js
+const picker = Floater.create('accent', 'color', { value: '#3b82f6', swatches: ['#ef4444', '#22c55e', '#3b82f6'] });
+picker.on('change', ({ value }) => document.body.style.setProperty('--accent', value));
+Floater.bind('#accent-btn', picker);
+
+// Bound to a text input it reads the field on open, writes back as you pick and follows what you type
+Floater.bind('#accent-input', Floater.create('accent-field', 'color'), { trigger: 'focus' });
+```
+
+| Opt | Default | Description |
+|---|---|---|
+| `value` | `'#ff0000'` | Starting colour, in any syntax the browser parses; `''` starts cleared |
+| `format` | `'hex'` | Output format: `'hex'` / `'rgb'` / `'hsl'`, `'auto'` (follow the format of whatever was last set or typed) or `'mixed'` (hex while opaque, rgba once there is opacity) |
+| `formatToggle` | `false` | Button that cycles the output format |
+| `formats` | `['hex', 'rgb', 'hsl']` | What the toggle cycles through |
+| `colorSyntax` | `'legacy'` | `'modern'` writes `rgb(r g b / a)` instead of `rgba(r, g, b, a)` |
+| `alpha` | `true` | Opacity slider; `false` forces every colour opaque |
+| `forceAlpha` | `false` | Always write the alpha channel, even at full opacity |
+| `swatches` | `[]` | Preset colours: strings or `{ value, label }` |
+| `swatchesOnly` | `false` | Swatches with none of the picking controls |
+| `closeOnSwatch` | `swatchesOnly` | Close once a swatch is picked |
+| `recent` | `false` | Row of recently picked colours: `true` keeps 8, a number sets the count. A colour is added when the picker closes on a new value |
+| `recentKey` | - | `localStorage` key to keep recent colours across page loads and share them between pickers |
+| `showInput` / `showPreview` | `true` | The text field / the new-vs-original preview (click the original half to go back to it) |
+| `focusInput` / `selectInput` | `false` | Focus, or focus and select, the text field on open |
+| `closeOnEnter` | `true` | Enter in the text field commits and closes |
+| `eyedropper` | `false` | Screen colour picker button, where the browser has `EyeDropper` (Chromium) |
+| `clearButton` / `doneButton` | `false` | Footer buttons; `clearLabel`, `doneLabel` and `eyedropperLabel` set their text |
+| `closeOnClear` | `true` | Close after Clear |
+| `changeOn` | `'release'` | When `change` fires: `'release'` (drag end, swatch, Enter), `'input'` (every step) or `'close'` (once, if the colour differs from when it opened). Wheeling a closed picker counts as a release under `'close'`, since no close is coming |
+| `inputOn` | `'input'` | When `input` fires, with the same values as `changeOn` plus `'none'`; `inputOn: 'close'` keeps a picker silent until it closes while its own preview still moves live |
+| `revertOnEscape` | `true` | Escape puts back the colour the picker opened with; `close({ revert: true })` does the same from code |
+| `syncInput` | `true` | Two-way sync with the anchor when it is a text input, including native `input`/`change` events on it |
+| `anchorVar` | - | Custom property to keep set to the current colour on the anchor, e.g. `'--fs-color'` to drive a thumbnail |
+| `scrollChannel` | `'auto'` | What the wheel moves with `scrollSelect`: `'hue'`, `'saturation'`, `'brightness'`, `'lightness'`, `'alpha'`, or `'auto'` to follow the control under the pointer (hue slider, opacity slider, the area turns brightness and a sideways swipe over it saturation, anywhere else hue). Saturation and brightness are the area's own axes (HSV), lightness is HSL's. A function `(event, instance) => channel` picks per notch |
+| `scrollStep` | `5` | Per wheel notch, in degrees for hue and percent for the rest; a number for every channel or an object such as `{ hue: 10, alpha: 2 }`, where missing channels fall back to 5 |
+| `scrollStepShift` | `4` | Multiplier for the step while Shift is held |
+| `scrollInvert` | `false` | Flip the wheel direction (up raises by default) |
+| `scrollWrap` | `true` | Hue wraps round past 0/360; `false` stops at the ends. The other channels always stop at 0 and 100% |
+| `labels` | - | Accessible names: `area`, `hue`, `alpha`, `input`, `format`, `eyedropper`, `revert`, `swatch`, `recent` |
+
+`input` fires live while dragging or typing unless `inputOn` says otherwise, `change` per `changeOn`. Both carry `{ value, hex, color: { r, g, b, a, h, s, v }, format, source }`, where `source` names what moved it (`area`, `hue`, `alpha`, `input`, `swatch`, `recent`, `eyedropper`, `format`, `clear`, `revert`, `anchor`, `scroll`, `update`, `close`). A cleared picker reports `value: ''` and `color: null`.
+
+The area takes arrow keys (Shift for bigger steps) and the sliders are native range inputs, so the whole picker works from the keyboard. Sizing is by custom property: `--fs-color-width`, `--fs-color-area-height`, `--fs-color-swatch-size`, and `--fs-color-checker` for the transparency pattern.
 
 ---
 

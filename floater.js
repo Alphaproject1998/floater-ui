@@ -1,5 +1,5 @@
 /*!
- * floater-ui v0.2.3
+ * floater-ui v0.2.4
  * https://github.com/Alphaproject1998/floater-ui
  * (c) 2026 Jack Briggs - MIT License
  */
@@ -117,6 +117,38 @@ const Floater = (() => {
             '.fs-image-panel{padding:6px;display:flex;flex-direction:column;gap:6px;}',
             '.fs-image-el{display:block;max-width:100%;height:auto;border-radius:3px;}',
             '.fs-image-caption{font-size:11px;color:rgba(255,255,255,0.4);text-align:center;}',
+            // Colour picker: sizes and the transparency checker are custom properties so a callsite can restyle without rewriting rules
+            '.fs-color-panel{display:flex;flex-direction:column;gap:8px;padding:8px;min-width:var(--fs-color-width,220px);box-sizing:border-box;--fs-color-checker:repeating-conic-gradient(#666 0 25%,#999 0 50%) 0 0/8px 8px;}',
+            '.fs-color-area{position:relative;height:var(--fs-color-area-height,130px);border-radius:4px;cursor:crosshair;touch-action:none;user-select:none;background:linear-gradient(to top,#000,rgba(0,0,0,0)),linear-gradient(to right,#fff,rgba(255,255,255,0)) var(--fs-color-hue,#f00);}',
+            '.fs-color-area:focus-visible,.fs-color-range:focus-visible,.fs-color-swatch:focus-visible{outline:2px solid rgba(255,255,255,0.7);outline-offset:2px;}',
+            '.fs-color-marker{position:absolute;left:var(--fs-color-x,0%);top:var(--fs-color-y,0%);width:12px;height:12px;margin:-6px 0 0 -6px;box-sizing:border-box;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(0,0,0,0.5);pointer-events:none;}',
+            '.fs-color-controls{display:flex;align-items:center;gap:8px;}',
+            '.fs-color-preview{display:flex;flex:none;width:36px;height:32px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.2);}',
+            '.fs-color-preview-new,.fs-color-preview-old{flex:1;padding:0;border:none;}',
+            '.fs-color-preview-new{background:linear-gradient(var(--fs-color-current),var(--fs-color-current)),var(--fs-color-checker);}',
+            '.fs-color-preview-old{cursor:pointer;background:linear-gradient(var(--fs-color-original),var(--fs-color-original)),var(--fs-color-checker);}',
+            '.fs-color-sliders{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;}',
+            '.fs-color-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:12px;margin:0;padding:0;border:none;border-radius:6px;cursor:pointer;}',
+            '.fs-color-hue{background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);}',
+            '.fs-color-alpha{background:linear-gradient(to right,rgba(0,0,0,0),var(--fs-color-opaque,#f00)),var(--fs-color-checker);}',
+            // The two thumb pseudos can't share a rule: a selector one engine doesn't know drops the whole list
+            '.fs-color-range::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;box-sizing:border-box;border:2px solid #fff;border-radius:50%;background:none;box-shadow:0 0 0 1px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(0,0,0,0.5);}',
+            '.fs-color-range::-moz-range-thumb{width:14px;height:14px;box-sizing:border-box;border:2px solid #fff;border-radius:50%;background:none;box-shadow:0 0 0 1px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(0,0,0,0.5);}',
+            '.fs-color-range::-moz-range-track{background:none;}',
+            '.fs-color-value-row{display:flex;gap:4px;}',
+            '.fs-color-input{flex:1;min-width:0;font-family:monospace;}',
+            '.fs-color-input.fs-color-invalid{border-color:rgba(255,100,100,0.8);}',
+            '.fs-color-btn{background:none;border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.8);border-radius:4px;padding:4px 8px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:background 0.1s,border-color 0.1s,color 0.1s;}',
+            '.fs-color-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.35);color:white;}',
+            '.fs-color-format{min-width:3ch;}',
+            '.fs-color-swatches{display:flex;flex-wrap:wrap;gap:6px;}',
+            '.fs-color-swatches:empty{display:none;}',
+            '.fs-color-swatch{width:var(--fs-color-swatch-size,20px);height:var(--fs-color-swatch-size,20px);padding:0;border:1px solid rgba(255,255,255,0.2);border-radius:4px;cursor:pointer;transition:transform 0.1s;}',
+            // .fs-press-hover sets a background of its own further down, which would blank the swatch being dragged over
+            '.fs-color-swatch,.fs-color-swatch.fs-press-hover{background:linear-gradient(var(--fs-swatch),var(--fs-swatch)),var(--fs-color-checker);}',
+            '.fs-color-swatch:hover,.fs-color-swatch.fs-press-hover{transform:scale(1.15);}',
+            '.fs-color-swatch-active{box-shadow:0 0 0 2px rgba(255,255,255,0.85);}',
+            '.fs-color-actions{display:flex;justify-content:flex-end;gap:6px;}',
             '.fs-persist-panel{display:block;}',
             '.fs-modal-panel{display:block;}',
             '#FloaterBackdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:8999;pointer-events:auto;display:none;}',
@@ -206,7 +238,13 @@ const Floater = (() => {
         el.addEventListener(toFrontOn === 'hover' ? 'mouseenter' : 'click', () => {
             const cont = _getContainer();
             if (!cont.contains(el) || !instance.isOpen) return;
-            if (cont.lastElementChild !== el) cont.appendChild(el);
+            if (cont.lastElementChild !== el) {
+                // The move resets the floater's scroll, which would jump a scrolled floater to the top the moment it is clicked
+                const { scrollTop, scrollLeft } = el;
+                cont.appendChild(el);
+                el.scrollTop = scrollTop;
+                el.scrollLeft = scrollLeft;
+            }
             const zBoost = (_types[instance._type] && _types[instance._type].zPriority) || 0;
             el.style.zIndex = String(++_zCounter + zBoost);
             _updateFocusClasses();
@@ -215,18 +253,21 @@ const Floater = (() => {
 
     // Floaters live in the fixed container, so an overflow ancestor that clips the anchor does not clip the floater.
     // Without this a floater keeps rendering beside the box its anchor scrolled out of.
-    function _updateClipState(instance, rect, scrollTargets) {
-        if (instance._activeOpts.hideOnAnchorClip === false) {
-            instance._el.classList.remove('fs-anchor-clipped');
-            return;
-        }
-        let clipped = false;
-        for (const target of scrollTargets) {
-            if (target === window) continue;
-            const box = target.getBoundingClientRect();
-            if (rect.bottom <= box.top || rect.top >= box.bottom || rect.right <= box.left || rect.left >= box.right) {
-                clipped = true;
-                break;
+    function _updateClipState(instance, rect, scrollTargets, fits) {
+        // if (instance._activeOpts.hideOnAnchorClip === false) {
+        //     instance._el.classList.remove('fs-anchor-clipped');
+        //     return;
+        // }
+        // A floater its boundary has no room for hides whatever hideOnAnchorClip says: there is nowhere to draw it
+        let clipped = fits === false;
+        if (!clipped && instance._activeOpts.hideOnAnchorClip !== false) {
+            for (const target of scrollTargets) {
+                if (target === window) continue;
+                const box = target.getBoundingClientRect();
+                if (rect.bottom <= box.top || rect.top >= box.bottom || rect.right <= box.left || rect.left >= box.right) {
+                    clipped = true;
+                    break;
+                }
             }
         }
         instance._el.classList.toggle('fs-anchor-clipped', clipped);
@@ -262,6 +303,8 @@ const Floater = (() => {
     }
 
     function _measure(floater, capW) {
+        // Re-hiding an open floater here would reset the scroll offset of everything inside it, because display:none drops scroll state
+        const wasHidden = floater.hasAttribute('hidden');
         floater.style.position = 'fixed';
         floater.style.visibility = 'hidden';
         floater.style.minWidth = '';
@@ -273,7 +316,7 @@ const Floater = (() => {
         floater.removeAttribute('hidden');
         const h = floater.scrollHeight;
         const w = floater.getBoundingClientRect().width;
-        floater.setAttribute('hidden', '');
+        if (wasHidden) floater.setAttribute('hidden', '');
         floater.style.visibility = '';
         floater.style.top = '';
         floater.style.left = '';
@@ -282,7 +325,7 @@ const Floater = (() => {
         return { h, w };
     }
 
-    function _position(anchor, floater, opts) {
+    function _position(anchor, floater, opts, boundaryEls) {
         opts = opts || {};
         const arrowEl = opts.arrowEl || null;
         const centerX = opts.centerX || false;
@@ -293,6 +336,12 @@ const Floater = (() => {
         const gap = opts.gap != null ? opts.gap : 4;
         const minWidth = opts.minWidth != null ? opts.minWidth : null;
         const fitContent = opts.fitContent || false;
+
+        // Measuring lifts max-height, which clamps the floater's own scroll to zero, so a reposition has to put it back.
+        // A fresh open is still hidden here and starts at the top.
+        const keepScroll = !floater.hasAttribute('hidden');
+        const scrollTop = floater.scrollTop;
+        const scrollLeft = floater.scrollLeft;
 
         const { h: natH, w: natW } = _measure(floater, null);
 
@@ -305,11 +354,47 @@ const Floater = (() => {
             anchorRect = { left: x, top: y, right: x, bottom: y, width: 0, height: 0 };
         }
         const vp = window.visualViewport;
-        const vH = vp ? vp.height : window.innerHeight;
-        const vW = vp ? vp.width : window.innerWidth;
+        // const vH = vp ? vp.height : window.innerHeight;
+        // const vW = vp ? vp.width : window.innerWidth;
+        let vH = vp ? vp.height : window.innerHeight;
+        let vW = vp ? vp.width : window.innerWidth;
 
         const cb = _findCB(floater);
-        const cbRect = cb ? cb.getBoundingClientRect() : { left: 0, top: 0 };
+        // const cbRect = cb ? cb.getBoundingClientRect() : { left: 0, top: 0 };
+        let cbRect = cb ? cb.getBoundingClientRect() : { left: 0, top: 0 };
+
+        // boundaryEls is the caller's cached list: a detached anchor has no ancestors left to walk
+        let boundary = [];
+        if (opts.boundary === 'clip') boundary = boundaryEls || _getScrollAncestors(anchor).filter(t => t !== window);
+        else if (opts.boundary && opts.boundary !== 'viewport') boundary = [].concat(opts.boundary).filter(el => el instanceof Element);
+        const bounded = boundary.length > 0;
+        const minSize = opts.boundaryMinSize != null ? opts.boundaryMinSize : 24;
+        if (bounded) {
+            let left = 0;
+            let top = 0;
+            let right = vW;
+            let bottom = vH;
+            for (const el of boundary) {
+                const box = el.getBoundingClientRect();
+                left = Math.max(left, box.left + el.clientLeft);
+                top = Math.max(top, box.top + el.clientTop);
+                right = Math.min(right, box.left + el.clientLeft + el.clientWidth);
+                bottom = Math.min(bottom, box.top + el.clientTop + el.clientHeight);
+            }
+            // Everything below was written against a viewport at 0,0.
+            // Moving the anchor into the boundary's coordinates and shifting the containing block by the same amount lets that maths run unchanged.
+            vW = Math.max(0, right - left);
+            vH = Math.max(0, bottom - top);
+            anchorRect = {
+                left: anchorRect.left - left,
+                right: anchorRect.right - left,
+                top: anchorRect.top - top,
+                bottom: anchorRect.bottom - top,
+                width: anchorRect.width,
+                height: anchorRect.height,
+            };
+            cbRect = { left: cbRect.left - left, top: cbRect.top - top };
+        }
 
         if (preferRight || preferLeft) {
             const spaceRight = vW - anchorRect.right - gap;
@@ -342,7 +427,13 @@ const Floater = (() => {
             floater.style.bottom = '';
             if (arrowEl) arrowEl.style.transform = openRight ? 'rotate(0deg)' : 'rotate(180deg)';
             floater.removeAttribute('hidden');
-            return { openBelow: null, openRight, actualH, natH: boxH };
+            if (keepScroll) {
+                floater.scrollTop = scrollTop;
+                floater.scrollLeft = scrollLeft;
+            }
+            // return { openBelow: null, openRight, actualH, natH: boxH };
+            const sideFits = !bounded || (actualW >= Math.min(natW, minSize) && actualH >= Math.min(boxH, minSize));
+            return { openBelow: null, openRight, actualH, natH: boxH, fits: sideFits };
         }
 
         const spaceBelow = vH - anchorRect.bottom - gap;
@@ -353,7 +444,9 @@ const Floater = (() => {
         const avail = openBelow ? spaceBelow : spaceAbove;
         const cappedW = Math.min(natW, vW - 8);
         const boxH = cappedW < natW ? _measure(floater, cappedW).h : natH;
-        const actualH = Math.min(boxH, avail);
+        // const actualH = Math.min(boxH, avail);
+        // The extra cap is because an anchor scrolled out of its boundary makes avail larger than the boundary itself
+        const actualH = bounded ? Math.max(0, Math.min(boxH, avail, vH - 8)) : Math.min(boxH, avail);
 
         const effectiveMinW = fitContent ? (minWidth || 0) : (minWidth != null ? minWidth : anchorRect.width);
         const layoutW = Math.min(Math.max(natW, effectiveMinW), vW - 8);
@@ -371,15 +464,24 @@ const Floater = (() => {
         floater.style.overflowY = boxH > avail ? 'auto' : 'hidden';
         floater.style.bottom = '';
 
-        if (openBelow) {
-            floater.style.top = (anchorRect.bottom + gap - cbRect.top) + 'px';
-        } else {
-            floater.style.top = (anchorRect.top - actualH - gap - cbRect.top) + 'px';
-        }
+        // if (openBelow) {
+        //     floater.style.top = (anchorRect.bottom + gap - cbRect.top) + 'px';
+        // } else {
+        //     floater.style.top = (anchorRect.top - actualH - gap - cbRect.top) + 'px';
+        // }
+        let top = openBelow ? anchorRect.bottom + gap : anchorRect.top - actualH - gap;
+        if (bounded) top = Math.max(4, Math.min(top, vH - actualH - 4));
+        floater.style.top = (top - cbRect.top) + 'px';
         if (arrowEl) arrowEl.style.transform = openBelow ? 'rotate(90deg)' : 'rotate(-90deg)';
 
         floater.removeAttribute('hidden');
-        return { openBelow, actualH, natH: boxH };
+        if (keepScroll) {
+            floater.scrollTop = scrollTop;
+            floater.scrollLeft = scrollLeft;
+        }
+        // return { openBelow, actualH, natH: boxH };
+        const fits = !bounded || (cappedW >= Math.min(natW, minSize) && actualH >= Math.min(boxH, minSize));
+        return { openBelow, actualH, natH: boxH, fits };
     }
 
     function _unposition(floater, arrowEl) {
@@ -897,6 +999,7 @@ const Floater = (() => {
             this._placement = null;
             this._pendingFinish = null;
             this._wasHidden = false;
+            this._boundaryEls = null;
         }
 
         get id() { return this._id; }
@@ -968,12 +1071,21 @@ const Floater = (() => {
                 cont.appendChild(this._el);
             }
             // Bring to front before measuring so the element is in its final DOM position when shown
-            if (cont.contains(this._el)) cont.appendChild(this._el);
+            // if (cont.contains(this._el)) cont.appendChild(this._el);
+            // The move resets scroll, which a fresh open relies on to start at the top, since Firefox restores the old offset after display:none.
+            // A re-open already on top must not move, and one that has to gets its own offset put back after positioning.
+            const moving = cont.contains(this._el) && (!wasOpen || cont.lastElementChild !== this._el);
+            const movedScroll = moving && wasOpen ? [this._el.scrollTop, this._el.scrollLeft] : null;
+            if (moving) cont.appendChild(this._el);
             const zBoost = (_types[this._type] && _types[this._type].zPriority) || 0;
             this._el.style.zIndex = String(++_zCounter + zBoost);
             if (anchor instanceof Element && !anchor.isConnected) _log('info', `floater "${this._id}" opened with a detached anchor`, { anchor });
             this._el.classList.remove('fs-anchor-clipped');
-            const placed = _position(anchor, this._el, merged);
+            // const placed = _position(anchor, this._el, merged);
+            this._boundaryEls = merged.boundary === 'clip' ? _getScrollAncestors(anchor).filter(t => t !== window) : null;
+            const placed = _position(anchor, this._el, merged, this._boundaryEls);
+            this._el.classList.toggle('fs-anchor-clipped', placed.fits === false);
+            if (movedScroll) [this._el.scrollTop, this._el.scrollLeft] = movedScroll;
             this._placement = placed.openBelow === null ? (placed.openRight ? 'right' : 'left') : (placed.openBelow ? 'below' : 'above');
             this._isOpen = true;
             if (!wasOpen) _openCount++;
@@ -1020,8 +1132,10 @@ const Floater = (() => {
                             };
                             follow = { getBoundingClientRect: () => rect };
                         }
-                        _position(follow, this._el, this._openOpts || {});
-                        _updateClipState(this, follow.getBoundingClientRect(), scrollTargets);
+                        // _position(follow, this._el, this._openOpts || {});
+                        // _updateClipState(this, follow.getBoundingClientRect(), scrollTargets);
+                        const followed = _position(follow, this._el, this._openOpts || {}, this._boundaryEls);
+                        _updateClipState(this, follow.getBoundingClientRect(), scrollTargets, followed.fits);
                     };
                     for (const target of scrollTargets) target.addEventListener('scroll', onScroll, { passive: true });
                     this._scrollCleanup = () => { for (const target of scrollTargets) target.removeEventListener('scroll', onScroll); };
@@ -1095,6 +1209,20 @@ const Floater = (() => {
 
         toggle(anchor, toggleOpts) {
             return this._isOpen ? this.close(toggleOpts) : this.open(anchor, toggleOpts);
+        }
+
+        reposition() {
+            if (!this._isOpen) return this;
+            const anchor = this._openAnchor;
+            const opts = this._openOpts || {};
+            const placed = _position(anchor, this._el, opts, this._boundaryEls);
+            // Only a bounded floater can stop fitting, so the unbounded case leaves whatever the scroll path last decided
+            if (opts.boundary && opts.boundary !== 'viewport') {
+                if (anchor instanceof Element && anchor.isConnected) _updateClipState(this, anchor.getBoundingClientRect(), _getScrollAncestors(anchor), placed.fits);
+                else if (placed.fits === false) this._el.classList.add('fs-anchor-clipped');
+            }
+            this._placement = placed.openBelow === null ? (placed.openRight ? 'right' : 'left') : (placed.openBelow ? 'below' : 'above');
+            return this;
         }
 
         update(updateOpts) {
@@ -1804,7 +1932,7 @@ const Floater = (() => {
                             : null;
 
             const _reposition = () => {
-                if (instance.isOpen && instance._openAnchor) _position(instance._openAnchor, instance.el, instance._openOpts || {});
+                if (instance.isOpen && instance._openAnchor) _position(instance._openAnchor, instance.el, instance._openOpts || {}, instance._boundaryEls);
             };
 
             const handleError = err => {
@@ -2000,7 +2128,7 @@ const Floater = (() => {
             const img = instance.el.querySelector('.fs-image-el');
             if (!img) return;
             const _reposition = () => {
-                if (instance.isOpen && instance._openAnchor) _position(instance._openAnchor, instance.el, instance._openOpts || {});
+                if (instance.isOpen && instance._openAnchor) _position(instance._openAnchor, instance.el, instance._openOpts || {}, instance._boundaryEls);
             };
             img.addEventListener('load', () => { instance.emit('loaded', { src: img.src }); _reposition(); });
             img.addEventListener('error', () => instance.emit('error', { src: img.src }));
@@ -2014,6 +2142,604 @@ const Floater = (() => {
             if (cap && opts.caption != null) cap.textContent = opts.caption;
         },
         onClickOutside: _closeOnOutside,
+    };
+
+    const _colorStates = new WeakMap();
+    let _colorCtx = null;
+    const _colorLabels = {
+        area: 'Saturation and brightness',
+        hue: 'Hue',
+        alpha: 'Opacity',
+        input: 'Colour value',
+        format: 'Change format',
+        eyedropper: 'Pick a colour from the screen',
+        revert: 'Back to the previous colour',
+        swatch: 'Colour swatch',
+        recent: 'Recent colour',
+    };
+    const _colorRebuildKeys = [
+        'swatches', 'swatchesOnly', 'alpha', 'showInput', 'showPreview', 'formatToggle', 'recent',
+        'eyedropper', 'eyedropperLabel', 'clearButton', 'clearLabel', 'doneButton', 'doneLabel', 'labels',
+    ];
+
+    function _clamp01(n) { return Math.max(0, Math.min(1, n)); }
+
+    // input-group nests types through a proxy that never opens, so it has no _activeOpts to read
+    function _colorOpts(instance) { return instance._activeOpts || instance.opts; }
+
+    // The canvas does the parsing, so anything the browser accepts as a colour works: names, hex, rgb(), hsl(), hwb()
+    function _parseColor(str) {
+        if (typeof str !== 'string' || !str.trim()) return null;
+        if (!_colorCtx) _colorCtx = document.createElement('canvas').getContext('2d');
+        // An invalid fillStyle is ignored and the old one stays, so two different primers show whether this one took
+        _colorCtx.fillStyle = '#000';
+        _colorCtx.fillStyle = str;
+        const parsed = _colorCtx.fillStyle;
+        _colorCtx.fillStyle = '#fff';
+        _colorCtx.fillStyle = str;
+        if (_colorCtx.fillStyle !== parsed) return null;
+        const format = /^\s*(rgb|hsl)/i.exec(str)?.[1].toLowerCase() || 'hex';
+        if (parsed[0] === '#') {
+            return { r: parseInt(parsed.slice(1, 3), 16), g: parseInt(parsed.slice(3, 5), 16), b: parseInt(parsed.slice(5, 7), 16), a: 1, format };
+        }
+        const m = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(parsed);
+        if (!m) return null;
+        return { r: +m[1], g: +m[2], b: +m[3], a: Math.round(m[4] * 100) / 100, format };
+    }
+
+    function _hsvToRgb(h, s, v) {
+        const channel = n => {
+            const k = (n + h / 60) % 6;
+            return Math.round((v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255);
+        };
+        return { r: channel(5), g: channel(3), b: channel(1) };
+    }
+
+    function _rgbToHsv(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const max = Math.max(r, g, b);
+        const d = max - Math.min(r, g, b);
+        let h = 0;
+        if (d) {
+            if (max === r) h = ((g - b) / d + 6) % 6;
+            else if (max === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+        }
+        return { h: h * 60, s: max ? d / max : 0, v: max };
+    }
+
+    function _hsvToHsl(s, v) {
+        const l = v * (1 - s / 2);
+        return { s: l === 0 || l === 1 ? 0 : (v - l) / Math.min(l, 1 - l), l };
+    }
+
+    function _hslToHsv(s, l) {
+        const v = l + s * Math.min(l, 1 - l);
+        return { s: v ? 2 * (1 - l / v) : 0, v };
+    }
+
+    function _colorHex(r, g, b, a) {
+        const parts = a == null ? [r, g, b] : [r, g, b, Math.round(a * 255)];
+        return '#' + parts.map(n => n.toString(16).padStart(2, '0')).join('');
+    }
+
+    function _colorMode(state) {
+        if (state.mode === 'mixed') return state.a < 1 ? 'rgb' : 'hex';
+        if (state.mode === 'auto') return state.detected || 'hex';
+        return state.mode;
+    }
+
+    function _colorValue(state, opts) {
+        if (state.empty) return '';
+        const { r, g, b } = _hsvToRgb(state.h, state.s, state.v);
+        const a = opts.alpha !== false && (state.a < 1 || opts.forceAlpha) ? state.a : null;
+        const modern = opts.colorSyntax === 'modern';
+        const mode = _colorMode(state);
+        if (mode === 'rgb') {
+            if (modern) return `rgb(${r} ${g} ${b}${a != null ? ` / ${a}` : ''})`;
+            return a != null ? `rgba(${r}, ${g}, ${b}, ${a})` : `rgb(${r}, ${g}, ${b})`;
+        }
+        if (mode === 'hsl') {
+            const { s: sat, l: light } = _hsvToHsl(state.s, state.v);
+            const h =Math.round(state.h) % 360;
+            const s = Math.round(sat * 100);
+            const l = Math.round(light * 100);
+            if (modern) return `hsl(${h} ${s}% ${l}%${a != null ? ` / ${a}` : ''})`;
+            return a != null ? `hsla(${h}, ${s}%, ${l}%, ${a})` : `hsl(${h}, ${s}%, ${l}%)`;
+        }
+        return _colorHex(r, g, b, a);
+    }
+
+    function _colorLoad(state, opts, str) {
+        const parsed = _parseColor(str);
+        if (!parsed) return false;
+        const hsv = _rgbToHsv(parsed.r, parsed.g, parsed.b);
+        // Greys have no hue and black has no saturation either, so the controls keep what they were on instead of snapping to zero
+        if (hsv.s && hsv.v) state.h = hsv.h;
+        if (hsv.v) state.s = hsv.s;
+        state.v = hsv.v;
+        state.a = opts.alpha === false ? 1 : parsed.a;
+        state.detected = parsed.format;
+        state.empty = false;
+        return true;
+    }
+
+    function _colorSnapshot(state, opts) {
+        const { h, s, v, a, empty } = state;
+        const { r, g, b } = _hsvToRgb(h, s, v);
+        state.original = { h, s, v, a, empty };
+        state.panel.style.setProperty('--fs-color-original', empty ? 'transparent' : `rgba(${r}, ${g}, ${b}, ${a})`);
+        state.openValue = state.lastInput = state.lastChange = _colorValue(state, opts);
+    }
+
+    function _colorAnchorInput(anchor, opts) {
+        if (opts.syncInput === false) return null;
+        return anchor instanceof HTMLInputElement && (anchor.type === 'text' || anchor.type === 'search') ? anchor : null;
+    }
+
+    function _colorEl(parent, tag, className, label) {
+        const el = document.createElement(tag);
+        el.className = className;
+        if (tag === 'button') el.type = 'button';
+        if (label) {
+            el.setAttribute('aria-label', label);
+            if (tag === 'button') el.title = label;
+        }
+        parent.appendChild(el);
+        return el;
+    }
+
+    function _buildColorSwatch(row, swatch, labelPrefix) {
+        const value = String(swatch.value ?? swatch);
+        const btn = _colorEl(row, 'button', 'fs-color-swatch', `${labelPrefix} ${swatch.label ?? value}`);
+        btn.title = swatch.label ?? value;
+        btn.dataset.value = value;
+        btn.style.setProperty('--fs-swatch', value);
+        const parsed = _parseColor(value);
+        if (parsed) btn.dataset.hex = _colorHex(parsed.r, parsed.g, parsed.b, parsed.a);
+        else _warn(`color: swatch "${value}" is not a colour the browser understands`);
+    }
+
+    function _buildColorPanel(content, opts) {
+        const labels = Object.assign({}, _colorLabels, opts.labels);
+        content.textContent = '';
+
+        if (!opts.swatchesOnly) {
+            const area = _colorEl(content, 'div', 'fs-color-area', labels.area);
+            area.tabIndex = 0;
+            area.setAttribute('role', 'slider');
+            _colorEl(area, 'div', 'fs-color-marker');
+
+            const controls = _colorEl(content, 'div', 'fs-color-controls');
+            if (opts.showPreview !== false) {
+                const preview = _colorEl(controls, 'div', 'fs-color-preview');
+                _colorEl(preview, 'div', 'fs-color-preview-new');
+                _colorEl(preview, 'button', 'fs-color-preview-old', labels.revert);
+            }
+            const sliders = _colorEl(controls, 'div', 'fs-color-sliders');
+            const hue = _colorEl(sliders, 'input', 'fs-color-range fs-color-hue', labels.hue);
+            hue.type = 'range';
+            hue.max = 360;
+            if (opts.alpha !== false) _colorEl(sliders, 'input', 'fs-color-range fs-color-alpha', labels.alpha).type = 'range';
+
+            const eyedropper = opts.eyedropper && 'EyeDropper' in window;
+            if (opts.showInput !== false || opts.formatToggle || eyedropper) {
+                const row = _colorEl(content, 'div', 'fs-color-value-row');
+                if (opts.showInput !== false) {
+                    const input = _colorEl(row, 'input', 'fs-input-field fs-color-input', labels.input);
+                    input.type = 'text';
+                    input.spellcheck = false;
+                    input.autocomplete = 'off';
+                }
+                if (opts.formatToggle) _colorEl(row, 'button', 'fs-color-btn fs-color-format', labels.format);
+                if (eyedropper) _colorEl(row, 'button', 'fs-color-btn fs-color-eyedropper', labels.eyedropper).textContent = opts.eyedropperLabel || '⌖';
+            }
+        }
+
+        if (opts.swatches?.length) {
+            const row = _colorEl(content, 'div', 'fs-color-swatches');
+            for (const swatch of opts.swatches) _buildColorSwatch(row, swatch, labels.swatch);
+        }
+        if (opts.recent) _colorEl(content, 'div', 'fs-color-swatches fs-color-recent');
+
+        if (opts.clearButton || opts.doneButton) {
+            const actions = _colorEl(content, 'div', 'fs-color-actions');
+            if (opts.clearButton) _colorEl(actions, 'button', 'fs-color-btn fs-color-clear').textContent = opts.clearLabel || 'Clear';
+            if (opts.doneButton) _colorEl(actions, 'button', 'fs-color-btn fs-color-done').textContent = opts.doneLabel || 'Done';
+        }
+    }
+
+    function _colorRenderRecent(state, opts) {
+        const row = state.panel.querySelector('.fs-color-recent');
+        if (!row) return;
+        // Read on every render, not once, so pickers sharing a recentKey see each other's colours
+        if (opts.recentKey) {
+            try {
+                const stored = JSON.parse(localStorage.getItem(opts.recentKey));
+                if (Array.isArray(stored)) state.recent = stored.filter(v => typeof v === 'string');
+            } catch (err) {
+                _log('info', 'color: stored recent colours could not be read', { err });
+            }
+        }
+        row.textContent = '';
+        for (const value of state.recent) _buildColorSwatch(row, value, opts.labels?.recent || _colorLabels.recent);
+    }
+
+    function _colorPushRecent(state, opts, value) {
+        const max = opts.recent === true ? 8 : opts.recent;
+        if (!max) return;
+        state.recent = [value, ...state.recent.filter(v => v !== value)].slice(0, max);
+        if (!opts.recentKey) return;
+        try { localStorage.setItem(opts.recentKey, JSON.stringify(state.recent)); }
+        catch (err) { _log('info', 'color: recent colours could not be saved', { err }); }
+    }
+
+    function _colorPaint(state, opts, typing) {
+        const panel = state.panel;
+        const { r, g, b } = _hsvToRgb(state.h, state.s, state.v);
+        const value = _colorValue(state, opts);
+        panel.style.setProperty('--fs-color-hue', `hsl(${state.h}, 100%, 50%)`);
+        panel.style.setProperty('--fs-color-opaque', `rgb(${r}, ${g}, ${b})`);
+        panel.style.setProperty('--fs-color-current', state.empty ? 'transparent' : `rgba(${r}, ${g}, ${b}, ${state.a})`);
+        panel.style.setProperty('--fs-color-x', `${state.s * 100}%`);
+        panel.style.setProperty('--fs-color-y', `${(1 - state.v) * 100}%`);
+        panel.classList.toggle('fs-color-empty', state.empty);
+        panel.querySelector('.fs-color-area')?.setAttribute('aria-valuetext', value);
+        const hue = panel.querySelector('.fs-color-hue');
+        if (hue) hue.value = state.h;
+        const alpha = panel.querySelector('.fs-color-alpha');
+        if (alpha) alpha.value = Math.round(state.a * 100);
+        // Rewriting the field mid-keystroke would swap what the user typed for the normalised value under the caret
+        const input = panel.querySelector('.fs-color-input');
+        if (input && !typing) {
+            input.value = value;
+            input.classList.remove('fs-color-invalid');
+        }
+        const format = panel.querySelector('.fs-color-format');
+        if (format) format.textContent = _colorMode(state).toUpperCase();
+        const hex = state.empty ? null : _colorHex(r, g, b, state.a);
+        for (const swatch of panel.querySelectorAll('.fs-color-swatch')) {
+            swatch.classList.toggle('fs-color-swatch-active', swatch.dataset.hex === hex);
+        }
+    }
+
+    const _colorScrollChannels = ['hue', 'saturation', 'brightness', 'lightness', 'alpha'];
+
+    // A sideways swipe over the area moves along its own x axis, which is saturation.
+    // Shift is excluded because browsers turn Shift+wheel into a sideways scroll too, and Shift already means bigger steps.
+    function _colorScrollChannel(instance, opts, e) {
+        let channel = opts.scrollChannel || 'auto';
+        if (typeof channel === 'function') channel = channel(e, instance) || 'auto';
+        if (channel !== 'auto') return channel;
+        const control = e?.target?.closest?.('.fs-color-alpha, .fs-color-hue, .fs-color-area');
+        if (!control || control.matches('.fs-color-hue')) return 'hue';
+        if (control.matches('.fs-color-alpha')) return 'alpha';
+        return !e.shiftKey && Math.abs(e.deltaX) > Math.abs(e.deltaY) ? 'saturation' : 'brightness';
+    }
+
+    function _colorPayload(state, value, source) {
+        const { r, g, b } = _hsvToRgb(state.h, state.s, state.v);
+        return {
+            value,
+            hex: state.empty ? '' : _colorHex(r, g, b, state.a < 1 ? state.a : null),
+            color: state.empty ? null : { r, g, b, a: state.a, h: Math.round(state.h) % 360, s: Math.round(state.s * 100), v: Math.round(state.v * 100) },
+            format: _colorMode(state),
+            source,
+        };
+    }
+
+    // A closed picker has no close coming to report on, so wheeling the anchor commits straight away under 'close' too
+    function _colorEventDue(mode, commit, instance) {
+        if (mode === 'input') return true;
+        if (!commit) return false;
+        return mode === 'release' || (mode === 'close' && !instance.isOpen);
+    }
+
+    // Every state change funnels through here: repaint, write back to the anchor, then emit.
+    // commit is false while a drag or typing is still in progress.
+    function _colorChanged(instance, source, commit) {
+        const state = _colorStates.get(instance);
+        const opts = _colorOpts(instance);
+        const value = _colorValue(state, opts);
+        instance.opts.value = value;
+        _colorPaint(state, opts, source === 'input' && !commit);
+
+        if (state.anchor && opts.anchorVar) state.anchor.style.setProperty(opts.anchorVar, value || 'transparent');
+        const anchorInput = state.anchorInput;
+        if (anchorInput && source !== 'anchor') {
+            // Flagged because the dispatch below comes straight back in through our own input listener on the anchor
+            state.writing = true;
+            if (anchorInput.value !== value) {
+                anchorInput.value = value;
+                anchorInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            if (commit) anchorInput.dispatchEvent(new Event('change', { bubbles: true }));
+            state.writing = false;
+        }
+
+        if (opts.onChange === false) return;
+        const payload = _colorPayload(state, value, source);
+        if (_colorEventDue(opts.inputOn || 'input', commit, instance) && value !== state.lastInput) {
+            state.lastInput = value;
+            instance.emit('input', payload);
+        }
+        if (_colorEventDue(opts.changeOn || 'release', commit, instance) && value !== state.lastChange) {
+            state.lastChange = value;
+            instance.emit('change', payload);
+        }
+    }
+
+    _types['color'] = {
+        build(opts) {
+            const content = _buildContent('fs-color-panel');
+            _buildColorPanel(content, opts);
+            return content;
+        },
+        init(instance, opts) {
+            const state = {
+                h: 0,
+                s: 1,
+                v: 1,
+                a: 1,
+                empty: opts.value === '',
+                mode: opts.format || 'hex',
+                detected: null,
+                panel: _content(instance.el) || instance.el,
+                recent: [],
+                original: null,
+                openValue: '',
+                lastInput: '',
+                lastChange: '',
+                anchor: null,
+                anchorInput: null,
+                anchorCleanup: null,
+                writing: false,
+                dragArea: null,
+                justDragged: false,
+            };
+            _colorStates.set(instance, state);
+            if (opts.value && !_colorLoad(state, opts, opts.value)) _warn(`color: "${opts.value}" is not a colour the browser understands, starting on red`);
+            _colorRenderRecent(state, opts);
+            _colorSnapshot(state, opts);
+            _colorPaint(state, opts);
+            instance.opts.value = state.openValue;
+
+            const el = instance.el;
+            el.addEventListener('click', e => e.stopPropagation());
+
+            const dragTo = e => {
+                const rect = state.dragArea.getBoundingClientRect();
+                state.s = _clamp01((e.clientX - rect.left) / rect.width);
+                state.v = 1 - _clamp01((e.clientY - rect.top) / rect.height);
+                state.empty = false;
+                _colorChanged(instance, 'area', false);
+            };
+            const endDrag = () => {
+                if (!state.dragArea) return;
+                state.dragArea = null;
+                _colorChanged(instance, 'area', true);
+                // A release outside the floater still fires a click, and some browsers target it at the common ancestor of press and release, so it would count as an outside click and close us.
+                // The timeout clears the flag right after that click has been dispatched.
+                state.justDragged = true;
+                setTimeout(() => { state.justDragged = false; });
+            };
+            // Pointer capture keeps the moves coming to the area once the pointer has left it, so no document listeners
+            el.addEventListener('pointerdown', e => {
+                const area = e.target.closest('.fs-color-area');
+                if (!area || e.button !== 0) return;
+                area.setPointerCapture(e.pointerId);
+                state.dragArea = area;
+                dragTo(e);
+            });
+            el.addEventListener('pointermove', e => { if (state.dragArea) dragTo(e); });
+            el.addEventListener('pointerup', endDrag);
+            el.addEventListener('pointercancel', endDrag);
+
+            // bind's focus trigger cancels every mousedown in the floater to keep the anchor focused, which also stops the sliders dragging and the field taking a caret.
+            // Both are focusable, so focus moving onto them keeps the floater open without that help.
+            el.addEventListener('mousedown', e => { if (e.target.matches('.fs-color-range, .fs-color-input')) e.stopImmediatePropagation(); });
+
+            // Text that doesn't parse is dropped here: the repaint puts the current colour back in the field
+            const commitText = input => {
+                if (input.value.trim()) _colorLoad(state, _colorOpts(instance), input.value);
+                _colorChanged(instance, 'input', true);
+            };
+
+            el.addEventListener('keydown', e => {
+                if (e.target.closest('.fs-color-input')) {
+                    if (e.key !== 'Enter') return;
+                    commitText(e.target);
+                    if (_colorOpts(instance).closeOnEnter !== false) instance.close();
+                    return;
+                }
+                if (!e.target.closest('.fs-color-area')) return;
+                const step = e.shiftKey ? 0.1 : 0.01;
+                if (e.key === 'ArrowLeft') state.s = _clamp01(state.s - step);
+                else if (e.key === 'ArrowRight') state.s = _clamp01(state.s + step);
+                else if (e.key === 'ArrowUp') state.v = _clamp01(state.v + step);
+                else if (e.key === 'ArrowDown') state.v = _clamp01(state.v - step);
+                else return;
+                e.preventDefault();
+                state.empty = false;
+                _colorChanged(instance, 'area', true);
+            });
+
+            el.addEventListener('input', e => {
+                const target = e.target;
+                let source = 'input';
+                if (target.matches('.fs-color-hue')) {
+                    state.h = +target.value;
+                    source = 'hue';
+                } else if (target.matches('.fs-color-alpha')) {
+                    state.a = target.value / 100;
+                    source = 'alpha';
+                } else if (target.matches('.fs-color-input')) {
+                    const valid = _colorLoad(state, _colorOpts(instance), target.value);
+                    target.classList.toggle('fs-color-invalid', !valid && target.value.trim() !== '');
+                    if (!valid) return;
+                } else {
+                    return;
+                }
+                state.empty = false;
+                _colorChanged(instance, source, false);
+            });
+
+            el.addEventListener('change', e => {
+                if (e.target.matches('.fs-color-input')) commitText(e.target);
+                else if (e.target.matches('.fs-color-range')) _colorChanged(instance, e.target.matches('.fs-color-hue') ? 'hue' : 'alpha', true);
+            });
+
+            el.addEventListener('click', e => {
+                const active = _colorOpts(instance);
+                const swatch = e.target.closest('.fs-color-swatch');
+                if (swatch) {
+                    if (!_colorLoad(state, active, swatch.dataset.value)) return;
+                    _colorChanged(instance, swatch.closest('.fs-color-recent') ? 'recent' : 'swatch', true);
+                    if (active.closeOnSwatch ?? active.swatchesOnly) instance.close();
+                    return;
+                }
+                if (e.target.closest('.fs-color-format')) {
+                    const formats = active.formats || ['hex', 'rgb', 'hsl'];
+                    state.mode = formats[(formats.indexOf(_colorMode(state)) + 1) % formats.length];
+                    _colorChanged(instance, 'format', true);
+                } else if (e.target.closest('.fs-color-preview-old')) {
+                    Object.assign(state, state.original);
+                    _colorChanged(instance, 'revert', true);
+                } else if (e.target.closest('.fs-color-eyedropper')) {
+                    // Backing out of the eyedropper with Escape rejects the promise, so the empty catch is deliberate
+                    new window.EyeDropper().open().then(result => {
+                        if (_colorLoad(state, _colorOpts(instance), result.sRGBHex)) _colorChanged(instance, 'eyedropper', true);
+                    }).catch(() => {});
+                } else if (e.target.closest('.fs-color-clear')) {
+                    state.empty = true;
+                    _colorChanged(instance, 'clear', true);
+                    if (active.closeOnClear !== false) instance.close();
+                } else if (e.target.closest('.fs-color-done')) {
+                    instance.close();
+                }
+            });
+
+            instance.on('show', () => {
+                const active = _colorOpts(instance);
+                if (!active.focusInput && !active.selectInput) return;
+                const input = state.panel.querySelector('.fs-color-input');
+                if (!input) return;
+                input.focus({ preventScroll: true });
+                if (active.selectInput) input.select();
+            });
+        },
+        onOpen(instance, anchor, merged) {
+            const state = _colorStates.get(instance);
+            if (state.anchorCleanup) state.anchorCleanup();
+            state.anchorCleanup = null;
+            state.anchor = anchor instanceof Element ? anchor : null;
+            const input = state.anchorInput = _colorAnchorInput(anchor, merged);
+            if (input) {
+                if (input.value.trim()) _colorLoad(state, merged, input.value);
+                else state.empty = true;
+                const onInput = () => {
+                    if (state.writing) return;
+                    if (_colorLoad(state, _colorOpts(instance), input.value)) _colorChanged(instance, 'anchor', false);
+                };
+                input.addEventListener('input', onInput);
+                state.anchorCleanup = () => input.removeEventListener('input', onInput);
+            } else if (merged.value && merged.value !== instance.opts.value) {
+                // Only an open-time override gets parsed: re-reading our own formatted value would round the colour a little on every open
+                _colorLoad(state, merged, merged.value);
+            }
+            // open() on an already open picker is a reposition, not a fresh edit, so the revert target stays put
+            if (!instance.isOpen) _colorSnapshot(state, merged);
+            _colorRenderRecent(state, merged);
+            _colorPaint(state, merged);
+            instance.opts.value = _colorValue(state, merged);
+            if (state.anchor && merged.anchorVar) state.anchor.style.setProperty(merged.anchorVar, _colorValue(state, merged) || 'transparent');
+        },
+        onClose(instance, merged) {
+            const state = _colorStates.get(instance);
+            state.dragArea = null;
+            const revert = merged.revert || (merged.trigger === 'escape' && merged.revertOnEscape !== false);
+            if (revert && _colorValue(state, merged) !== state.openValue) {
+                Object.assign(state, state.original);
+                _colorChanged(instance, 'revert', true);
+            }
+            const value = _colorValue(state, merged);
+            if (value !== state.openValue) {
+                const payload = _colorPayload(state, value, 'close');
+                if (merged.inputOn === 'close' && merged.onChange !== false) {
+                    state.lastInput = value;
+                    instance.emit('input', payload);
+                }
+                if (merged.changeOn === 'close' && merged.onChange !== false) {
+                    state.lastChange = value;
+                    // instance.emit('change', _colorPayload(state, value, 'close'));
+                    instance.emit('change', payload);
+                }
+                if (value) _colorPushRecent(state, merged, value);
+            }
+            if (state.anchorCleanup) state.anchorCleanup();
+            state.anchorCleanup = null;
+            state.anchor = null;
+            state.anchorInput = null;
+        },
+        onUpdate(instance, opts) {
+            const state = _colorStates.get(instance);
+            if (_colorRebuildKeys.some(key => key in opts)) {
+                _buildColorPanel(state.panel, instance.opts);
+                _colorRenderRecent(state, instance.opts);
+            }
+            if (opts.format) state.mode = opts.format;
+            if (opts.value === '') state.empty = true;
+            else if (opts.value != null && !_colorLoad(state, instance.opts, opts.value)) _warn(`color: update() got "${opts.value}", which is not a colour the browser understands`);
+            _colorChanged(instance, 'update', true);
+        },
+        onScrollSelect(instance, delta, e) {
+            const state = _colorStates.get(instance);
+            const opts = _colorOpts(instance);
+            const channel = _colorScrollChannel(instance, opts, e);
+            if (!_colorScrollChannels.includes(channel)) {
+                _warnOnce(`color-scroll:${channel}`, `color: unknown scrollChannel "${channel}", expected auto or one of ${_colorScrollChannels.join(', ')}`);
+                return;
+            }
+            if (channel === 'alpha' && opts.alpha === false) return;
+            // Closed, there is no open anchor to write back to, so the input being wheeled over stands in for it
+            const target = instance.isOpen ? null : _colorAnchorInput(e?.currentTarget, opts);
+            if (target) {
+                _colorLoad(state, opts, target.value);
+                state.anchorInput = target;
+            }
+            // if (e?.target?.closest?.('.fs-color-alpha')) state.a = _clamp01(Math.round(state.a * 100 - delta * 5) / 100);
+            // else state.h = (state.h - delta * (opts.scrollStep ?? 5) + 360) % 360;
+            const steps = opts.scrollStep;
+            let step = (steps && typeof steps === 'object' ? steps[channel] : steps) ?? 5;
+            if (e?.shiftKey) step *= opts.scrollStepShift ?? 4;
+            const amount = (opts.scrollInvert ? delta : -delta) * step;
+            if (channel === 'hue') {
+                const h = state.h + amount;
+                state.h = opts.scrollWrap === false ? Math.max(0, Math.min(360, h)) : (h % 360 + 360) % 360;
+            } else if (channel === 'lightness') {
+                const hsl = _hsvToHsl(state.s, state.v);
+                // HSL saturation collapses to 0 at pure white, so the last real one is carried through to come back out of it with
+                const kept = state.hslKept;
+                const sat = kept && kept.s === state.s && kept.v === state.v ? kept.sat : hsl.s;
+                const hsv = _hslToHsv(sat, _clamp01(Math.round(hsl.l * 100 + amount) / 100));
+                // Black has no saturation either, but the area remembers where it was rather than snapping to the corner
+                if (hsv.v) state.s = hsv.s;
+                state.v = hsv.v;
+                state.hslKept = { s: state.s, v: state.v, sat };
+            } else {
+                const key = { saturation: 's', brightness: 'v', alpha: 'a' }[channel];
+                state[key] = _clamp01(Math.round(state[key] * 100 + amount) / 100);
+            }
+            state.empty = false;
+            _colorChanged(instance, 'scroll', true);
+            if (target) state.anchorInput = null;
+        },
+        onClickOutside(instance) {
+            if (_colorStates.get(instance).justDragged) return;
+            instance.close();
+        },
     };
 
     function _buildContextMenuItems(el, items) {
@@ -2381,8 +3107,12 @@ const Floater = (() => {
                 const onWheel = e => {
                     const typeDef = _types[instance.type];
                     if (!cb && !typeDef?.onScrollSelect) return;
+                    // Browsers send Shift+wheel as a sideways scroll with deltaY at 0, so deltaX has to carry the direction then
+                    const raw = e.deltaY || e.deltaX;
+                    if (!raw) return;
                     e.preventDefault();
-                    const delta = e.deltaY > 0 ? 1 : -1;
+                    // const delta = e.deltaY > 0 ? 1 : -1;
+                    const delta = raw > 0 ? 1 : -1;
                     if (cb) cb(instance, delta, e);
                     else typeDef.onScrollSelect(instance, delta, e);
                 };
